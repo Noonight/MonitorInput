@@ -1,0 +1,502 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		0E40BA4A9AD1CB4F8BE6CDEF /* MonitorWorker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D591B556BAB6FBB43F186C8 /* MonitorWorker.swift */; };
+		139305610B0332BCD8C9E695 /* AutomaticMirroringTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2371367808ADE838EBDDE175 /* AutomaticMirroringTests.swift */; };
+		17E6E1E511F4EF2A9228B5EC /* MonitorController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C29CA3BB82D1D4ED81885826 /* MonitorController.swift */; };
+		22111DE4E007DF2265EFA6D6 /* MonitorController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C29CA3BB82D1D4ED81885826 /* MonitorController.swift */; };
+		2907AF025482431A092BE23E /* HuaweiTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB80A43FF0C45980CAF7894B /* HuaweiTransport.swift */; };
+		48135A422F544751FCC40558 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F21AECE9D480FAF9EF91CD2F /* Cocoa.framework */; };
+		4AA309C70E588B3C68915A14 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F21AECE9D480FAF9EF91CD2F /* Cocoa.framework */; };
+		65CEF8F03EB39C33887D1A23 /* AutomaticMirroring.swift in Sources */ = {isa = PBXBuildFile; fileRef = 445F5104F8E332930142B831 /* AutomaticMirroring.swift */; };
+		678A6AC2BEED91A4A06C83B9 /* DisplayProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1CA1ABCCBDBD69322AF210E7 /* DisplayProtocol.swift */; };
+		6D06E7B36F82C80C76859A60 /* MonitorPreferencesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4AF20304DD9AB21202881C6 /* MonitorPreferencesTests.swift */; };
+		8D638CA5CAC02612398B9160 /* MonitorPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75B654A57CDA0505DA40BB07 /* MonitorPreferences.swift */; };
+		B27132A3DAD80F81971284AE /* DisplayProtocolTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DD7D1F6A47C82F2A8852320 /* DisplayProtocolTests.swift */; };
+		CBB7160F5DC22E759BC75F73 /* DisplayProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1CA1ABCCBDBD69322AF210E7 /* DisplayProtocol.swift */; };
+		CEE6888104790148DDF1185A /* MonitorControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23D05EC71EE10F81CE8B2BE7 /* MonitorControllerTests.swift */; };
+		CFD9156D867C688BCF5EA03A /* AutomaticMirroring.swift in Sources */ = {isa = PBXBuildFile; fileRef = 445F5104F8E332930142B831 /* AutomaticMirroring.swift */; };
+		E25CAD03CE1F1530F221285F /* MonitorPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75B654A57CDA0505DA40BB07 /* MonitorPreferences.swift */; };
+		E5DD7A267473B1D00926548C /* QuartzDesktopMirroring.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28FB769CCB33E2B99C85C76C /* QuartzDesktopMirroring.swift */; };
+		E7B5D9DAA9617229EDCDDC72 /* MonitorMenuBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5241EC59621FB25A7BC7E687 /* MonitorMenuBar.swift */; };
+		EB4CBB6A590012A6F75C3E8B /* MonitorInputApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7EB4674D10E6B10D8B6755FE /* MonitorInputApp.swift */; };
+		F321B8F5B77542CE9CBDA8F5 /* AlreadyOnMacToast.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3FA3FED6C29FD552DDBA3794 /* AlreadyOnMacToast.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		1CA1ABCCBDBD69322AF210E7 /* DisplayProtocol.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DisplayProtocol.swift; sourceTree = "<group>"; };
+		2371367808ADE838EBDDE175 /* AutomaticMirroringTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AutomaticMirroringTests.swift; sourceTree = "<group>"; };
+		23D05EC71EE10F81CE8B2BE7 /* MonitorControllerTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MonitorControllerTests.swift; sourceTree = "<group>"; };
+		28FB769CCB33E2B99C85C76C /* QuartzDesktopMirroring.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = QuartzDesktopMirroring.swift; sourceTree = "<group>"; };
+		2CB93DC3E0F819CE75AD2F5C /* MonitorInputTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MonitorInputTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		2D591B556BAB6FBB43F186C8 /* MonitorWorker.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MonitorWorker.swift; sourceTree = "<group>"; };
+		3FA3FED6C29FD552DDBA3794 /* AlreadyOnMacToast.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AlreadyOnMacToast.swift; sourceTree = "<group>"; };
+		445F5104F8E332930142B831 /* AutomaticMirroring.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AutomaticMirroring.swift; sourceTree = "<group>"; };
+		4DD7D1F6A47C82F2A8852320 /* DisplayProtocolTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DisplayProtocolTests.swift; sourceTree = "<group>"; };
+		5241EC59621FB25A7BC7E687 /* MonitorMenuBar.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MonitorMenuBar.swift; sourceTree = "<group>"; };
+		70163C6305293A3FB808BF98 /* README.md */ = {isa = PBXFileReference; includeInIndex = 1; path = README.md; sourceTree = "<group>"; };
+		75B654A57CDA0505DA40BB07 /* MonitorPreferences.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MonitorPreferences.swift; sourceTree = "<group>"; };
+		7EB4674D10E6B10D8B6755FE /* MonitorInputApp.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MonitorInputApp.swift; sourceTree = "<group>"; };
+		85A293F36B374D8A21E00F3A /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		9827212379375D0A453A54A5 /* MonitorInput.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MonitorInput.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		C29CA3BB82D1D4ED81885826 /* MonitorController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MonitorController.swift; sourceTree = "<group>"; };
+		C4AF20304DD9AB21202881C6 /* MonitorPreferencesTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MonitorPreferencesTests.swift; sourceTree = "<group>"; };
+		DB80A43FF0C45980CAF7894B /* HuaweiTransport.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HuaweiTransport.swift; sourceTree = "<group>"; };
+		F21AECE9D480FAF9EF91CD2F /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.15.sdk/System/Library/Frameworks/Cocoa.framework; sourceTree = DEVELOPER_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		09A77C2DF2E8C6C7E9F77665 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				48135A422F544751FCC40558 /* Cocoa.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		7B9E3A05596C198D4DD5CAE6 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4AA309C70E588B3C68915A14 /* Cocoa.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		20B69A103D50278ED2072F90 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				9827212379375D0A453A54A5 /* MonitorInput.app */,
+				2CB93DC3E0F819CE75AD2F5C /* MonitorInputTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		39403B6BDED64B79A3C92D48 /* Tests */ = {
+			isa = PBXGroup;
+			children = (
+				4DD7D1F6A47C82F2A8852320 /* DisplayProtocolTests.swift */,
+				23D05EC71EE10F81CE8B2BE7 /* MonitorControllerTests.swift */,
+				C4AF20304DD9AB21202881C6 /* MonitorPreferencesTests.swift */,
+				2371367808ADE838EBDDE175 /* AutomaticMirroringTests.swift */,
+			);
+			name = Tests;
+			path = Tests;
+			sourceTree = "<group>";
+		};
+		5684418CA1C1FCD3CDBB7780 /* OS X */ = {
+			isa = PBXGroup;
+			children = (
+				F21AECE9D480FAF9EF91CD2F /* Cocoa.framework */,
+			);
+			name = "OS X";
+			sourceTree = "<group>";
+		};
+		6E252B76C9B0CA24CFDE914C /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				5684418CA1C1FCD3CDBB7780 /* OS X */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		6F8C5938202E47B3F1AFED7D = {
+			isa = PBXGroup;
+			children = (
+				20B69A103D50278ED2072F90 /* Products */,
+				6E252B76C9B0CA24CFDE914C /* Frameworks */,
+				76A6F45B6A637EAC91FBBA04 /* Sources */,
+				39403B6BDED64B79A3C92D48 /* Tests */,
+				85A293F36B374D8A21E00F3A /* Info.plist */,
+				70163C6305293A3FB808BF98 /* README.md */,
+			);
+			sourceTree = "<group>";
+		};
+		76A6F45B6A637EAC91FBBA04 /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				A9694685688C42F42721407D /* Core */,
+				ADD5756E4ABE15ABCFEB1C78 /* App */,
+				893BE1FFF3A06326E03CB13C /* Hardware */,
+			);
+			name = Sources;
+			path = Sources;
+			sourceTree = "<group>";
+		};
+		893BE1FFF3A06326E03CB13C /* Hardware */ = {
+			isa = PBXGroup;
+			children = (
+				DB80A43FF0C45980CAF7894B /* HuaweiTransport.swift */,
+				2D591B556BAB6FBB43F186C8 /* MonitorWorker.swift */,
+				28FB769CCB33E2B99C85C76C /* QuartzDesktopMirroring.swift */,
+			);
+			name = Hardware;
+			path = Hardware;
+			sourceTree = "<group>";
+		};
+		A9694685688C42F42721407D /* Core */ = {
+			isa = PBXGroup;
+			children = (
+				1CA1ABCCBDBD69322AF210E7 /* DisplayProtocol.swift */,
+				C29CA3BB82D1D4ED81885826 /* MonitorController.swift */,
+				75B654A57CDA0505DA40BB07 /* MonitorPreferences.swift */,
+				445F5104F8E332930142B831 /* AutomaticMirroring.swift */,
+			);
+			name = Core;
+			path = Core;
+			sourceTree = "<group>";
+		};
+		ADD5756E4ABE15ABCFEB1C78 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				7EB4674D10E6B10D8B6755FE /* MonitorInputApp.swift */,
+				5241EC59621FB25A7BC7E687 /* MonitorMenuBar.swift */,
+				3FA3FED6C29FD552DDBA3794 /* AlreadyOnMacToast.swift */,
+			);
+			name = App;
+			path = App;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		223204C05727B72E9F17D047 /* MonitorInput */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B46903480807B51B8D287763 /* Build configuration list for PBXNativeTarget "MonitorInput" */;
+			buildPhases = (
+				6D1149E792FF42BD363DE550 /* Sources */,
+				09A77C2DF2E8C6C7E9F77665 /* Frameworks */,
+				AD977317522C316A0CAC0DAF /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = MonitorInput;
+			productName = MonitorInput;
+			productReference = 9827212379375D0A453A54A5 /* MonitorInput.app */;
+			productType = "com.apple.product-type.application";
+		};
+		460274C94B7E16B91BCB050A /* MonitorInputTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 62A9F9F0163D5AAFB089FB2C /* Build configuration list for PBXNativeTarget "MonitorInputTests" */;
+			buildPhases = (
+				E3C7AFFE436C3030BE828116 /* Sources */,
+				7B9E3A05596C198D4DD5CAE6 /* Frameworks */,
+				70DE934BB60DEAF07288BBAE /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = MonitorInputTests;
+			productName = MonitorInputTests;
+			productReference = 2CB93DC3E0F819CE75AD2F5C /* MonitorInputTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		D8D3870AB9FA9C771516B8D2 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastSwiftUpdateCheck = 1240;
+				LastUpgradeCheck = 1240;
+			};
+			buildConfigurationList = B8C2D99237AE13AA08A8D46E /* Build configuration list for PBXProject "MonitorInput" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 6F8C5938202E47B3F1AFED7D;
+			productRefGroup = 20B69A103D50278ED2072F90 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				223204C05727B72E9F17D047 /* MonitorInput */,
+				460274C94B7E16B91BCB050A /* MonitorInputTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		70DE934BB60DEAF07288BBAE /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AD977317522C316A0CAC0DAF /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		6D1149E792FF42BD363DE550 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				678A6AC2BEED91A4A06C83B9 /* DisplayProtocol.swift in Sources */,
+				22111DE4E007DF2265EFA6D6 /* MonitorController.swift in Sources */,
+				8D638CA5CAC02612398B9160 /* MonitorPreferences.swift in Sources */,
+				EB4CBB6A590012A6F75C3E8B /* MonitorInputApp.swift in Sources */,
+				E7B5D9DAA9617229EDCDDC72 /* MonitorMenuBar.swift in Sources */,
+				F321B8F5B77542CE9CBDA8F5 /* AlreadyOnMacToast.swift in Sources */,
+				2907AF025482431A092BE23E /* HuaweiTransport.swift in Sources */,
+				0E40BA4A9AD1CB4F8BE6CDEF /* MonitorWorker.swift in Sources */,
+				65CEF8F03EB39C33887D1A23 /* AutomaticMirroring.swift in Sources */,
+				E5DD7A267473B1D00926548C /* QuartzDesktopMirroring.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E3C7AFFE436C3030BE828116 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				CBB7160F5DC22E759BC75F73 /* DisplayProtocol.swift in Sources */,
+				17E6E1E511F4EF2A9228B5EC /* MonitorController.swift in Sources */,
+				E25CAD03CE1F1530F221285F /* MonitorPreferences.swift in Sources */,
+				B27132A3DAD80F81971284AE /* DisplayProtocolTests.swift in Sources */,
+				CEE6888104790148DDF1185A /* MonitorControllerTests.swift in Sources */,
+				6D06E7B36F82C80C76859A60 /* MonitorPreferencesTests.swift in Sources */,
+				CFD9156D867C688BCF5EA03A /* AutomaticMirroring.swift in Sources */,
+				139305610B0332BCD8C9E695 /* AutomaticMirroringTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		07E4A24EDFB29FC9CB0924C2 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = arm64;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.4;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+		350D7D9B8CE460AF12D0CEAB /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.4;
+				PRODUCT_BUNDLE_IDENTIFIER = local.monitorinput.tests;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		5234497FAFD19726D6F60E2E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_APP_SANDBOX = NO;
+				ENABLE_HARDENED_RUNTIME = YES;
+				INFOPLIST_FILE = Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 14.4;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = local.monitorinput.app;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		53303B594A683EF5616F1310 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_APP_SANDBOX = NO;
+				ENABLE_HARDENED_RUNTIME = YES;
+				INFOPLIST_FILE = Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 14.4;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = local.monitorinput.app;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		90647C09690A0C232A9DB358 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.4;
+				PRODUCT_BUNDLE_IDENTIFIER = local.monitorinput.tests;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		A53501CA8F98C43DA0FDF468 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = arm64;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.4;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		62A9F9F0163D5AAFB089FB2C /* Build configuration list for PBXNativeTarget "MonitorInputTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				90647C09690A0C232A9DB358 /* Release */,
+				350D7D9B8CE460AF12D0CEAB /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		B46903480807B51B8D287763 /* Build configuration list for PBXNativeTarget "MonitorInput" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				53303B594A683EF5616F1310 /* Release */,
+				5234497FAFD19726D6F60E2E /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		B8C2D99237AE13AA08A8D46E /* Build configuration list for PBXProject "MonitorInput" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A53501CA8F98C43DA0FDF468 /* Debug */,
+				07E4A24EDFB29FC9CB0924C2 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = D8D3870AB9FA9C771516B8D2 /* Project object */;
+}

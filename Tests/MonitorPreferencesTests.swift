@@ -2,6 +2,96 @@ import Foundation
 import XCTest
 
 final class MonitorPreferencesTests: XCTestCase {
+    func testCustomNamesAndMacInputAreStoredPerDisplay() throws {
+        let (defaults, domain) = try testDefaults()
+        defer { defaults.removePersistentDomain(forName: domain) }
+        let first = DisplayIdentity(fingerprint: "first", serialNumber: 10)
+        let second = DisplayIdentity(fingerprint: "second", serialNumber: 20)
+        let preferences = MonitorPreferences(defaults: defaults)
+        preferences.assignMacInput(.hdmi2, for: first)
+        preferences.renameInput(.displayPort, for: first, to: " Linux ")
+        preferences.renameInput(.displayPort, for: second, to: "Консоль")
+        preferences.preferredMonitor = second.fingerprint
+
+        let reloaded = MonitorPreferences(defaults: defaults)
+        XCTAssertEqual(reloaded.configuration(for: first).macInput, .hdmi2)
+        XCTAssertEqual(reloaded.configuration(for: first).aliases[0x0F], "Linux")
+        XCTAssertEqual(reloaded.configuration(for: second).aliases[0x0F], "Консоль")
+        XCTAssertNil(reloaded.configuration(for: second).macInput)
+        XCTAssertEqual(reloaded.preferredMonitor, second.fingerprint)
+
+        reloaded.renameInput(.displayPort, for: first, to: " ")
+        XCTAssertNil(reloaded.configuration(for: first).aliases[0x0F])
+    }
+
+    func testOldHuaweiCacheRetainsMacUsbCOnUpgrade() throws {
+        let (defaults, domain) = try testDefaults()
+        defer { defaults.removePersistentDomain(forName: domain) }
+        let legacy = #"{"identity":{"fingerprint":"existing-edid","serialNumber":42},"input":15,"observedAt":100}"#
+        defaults.set(Data(legacy.utf8), forKey: "lastMonitorState")
+        let preferences = MonitorPreferences(defaults: defaults)
+        let huawei = DisplayIdentity(
+            fingerprint: "existing-edid",
+            serialNumber: 42,
+            product: DisplayProduct(vendorID: 0x22F6, modelID: 0x6A25, name: "ZQE-CAA")
+        )
+        XCTAssertEqual(preferences.configuration(for: huawei).macInput, .usbC)
+        XCTAssertEqual(preferences.configuration(for: huawei).observedInputs, [.displayPort])
+        XCTAssertNil(preferences.configuration(for: DisplayIdentity(fingerprint: "new", serialNumber: nil)).macInput)
+        XCTAssertEqual(preferences.lastSeen?.input, .displayPort)
+    }
+
+    func testManuallySelectedInputIsAvailableWhenCapabilitiesAreMissing() {
+        var configuration = MonitorConfiguration()
+        configuration.observedInputs = [.hdmi1]
+        XCTAssertEqual(configuration.inputs(advertised: [], profile: nil), [.hdmi1])
+        XCTAssertEqual(configuration.inputs(advertised: [.displayPort], profile: nil), [.hdmi1, .displayPort])
+    }
+
+    func testUpdatingAMonitorWithHiddenInputsKeepsVisibilityAndOtherProfiles() throws {
+        let (defaults, domain) = try testDefaults()
+        defer { defaults.removePersistentDomain(forName: domain) }
+        let first = DisplayIdentity(fingerprint: "first", serialNumber: 10)
+        let second = DisplayIdentity(fingerprint: "second", serialNumber: 20)
+        let stored = """
+        {
+          "first": {"macInput":16,"aliases":[],"observedInputs":[15,16,17,18],"hiddenInputs":[17,18]},
+          "second": {"macInput":15,"aliases":[],"observedInputs":[15,16]}
+        }
+        """
+        defaults.set(Data(stored.utf8), forKey: "monitorConfigurations")
+        let preferences = MonitorPreferences(defaults: defaults)
+        preferences.renameInput(.displayPort, for: first, to: "Windows")
+
+        let data = try XCTUnwrap(defaults.data(forKey: "monitorConfigurations"))
+        let encoded = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: [String: Any]])
+        XCTAssertEqual(Set(encoded["first"]?["hiddenInputs"] as? [Int] ?? []), [17, 18])
+        let reloaded = MonitorPreferences(defaults: defaults)
+        XCTAssertEqual(reloaded.configuration(for: first).aliases[15], "Windows")
+        XCTAssertEqual(reloaded.configuration(for: first).macInput, .usbC)
+        XCTAssertEqual(reloaded.configuration(for: second).macInput, .displayPort)
+        XCTAssertTrue(reloaded.configuration(for: second).isInputVisible(.hdmi1))
+    }
+
+    func testHidingAnInputOnlyAffectsTheMenuAndCanBeUndone() throws {
+        let (defaults, domain) = try testDefaults()
+        defer { defaults.removePersistentDomain(forName: domain) }
+        let monitor = DisplayIdentity(fingerprint: "monitor", serialNumber: 10)
+        let preferences = MonitorPreferences(defaults: defaults)
+        preferences.assignMacInput(.usbC, for: monitor)
+        preferences.toggleInputVisibility(.usbC, for: monitor)
+
+        let reloaded = MonitorPreferences(defaults: defaults)
+        let configuration = reloaded.configuration(for: monitor)
+        XCTAssertFalse(configuration.isInputVisible(.usbC))
+        XCTAssertTrue(configuration.isInputVisible(.displayPort))
+        XCTAssertEqual(configuration.macInput, .usbC)
+        XCTAssertEqual(configuration.inputs(advertised: [.displayPort], profile: nil), [.usbC, .displayPort])
+
+        reloaded.toggleInputVisibility(.usbC, for: monitor)
+        XCTAssertTrue(MonitorPreferences(defaults: defaults).configuration(for: monitor).isInputVisible(.usbC))
+    }
+
     func testAutomaticMirroringIsOptInAndPersistsAcrossLaunches() throws {
         let (defaults, domain) = try testDefaults()
         defer { defaults.removePersistentDomain(forName: domain) }

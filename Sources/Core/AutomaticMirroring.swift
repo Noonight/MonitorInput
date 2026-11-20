@@ -6,22 +6,24 @@ enum DesktopMirrorState: Equatable {
 }
 
 protocol DesktopMirroring {
-    func mirrorHuawei(_ identity: DisplayIdentity) -> DesktopMirrorState
+    func mirrorDisplay(_ identity: DisplayIdentity) -> DesktopMirrorState
     func restoreLayout() -> DesktopMirrorState
 }
 
 struct AutomaticMirroring {
     let desktop: any DesktopMirroring
 
-    func update(_ status: MonitorStatus?, enabled: Bool) -> DesktopMirrorState? {
+    func update(
+        _ status: MonitorStatus?, enabled: Bool, macInput: DisplayInput? = nil, hasUniqueDisplayMatch: Bool = false
+    ) -> DesktopMirrorState? {
         guard enabled else { return desktop.restoreLayout() }
+        if status == .ambiguous { return desktop.restoreLayout() }
         guard case .connected(let reading) = status, let input = reading.input else { return nil }
 
-        switch input {
-        case .usbC:
-            return desktop.restoreLayout()
-        case .displayPort, .hdmi1, .hdmi2:
-            return desktop.mirrorHuawei(reading.connection.identity)
+        guard let macInput, input != macInput else { return desktop.restoreLayout() }
+        guard hasUniqueDisplayMatch else {
+            return desktop.restoreLayout() == .restoreFailed ? .restoreFailed : .unavailable
         }
+        return desktop.mirrorDisplay(reading.connection.identity)
     }
 }

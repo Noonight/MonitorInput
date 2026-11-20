@@ -1,0 +1,13 @@
+[
+  {
+    "vendorID": "22F6",
+    "modelID": "6A25",
+    "name": "HUAWEI MateView GT",
+    "ports": {
+      "0F": "DisplayPort",
+      "10": "USB‑C",
+      "11": "HDMI 1",
+      "12": "HDMI 2"
+    }
+  }
+]

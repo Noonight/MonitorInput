@@ -10,13 +10,15 @@
 		0E40BA4A9AD1CB4F8BE6CDEF /* MonitorWorker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D591B556BAB6FBB43F186C8 /* MonitorWorker.swift */; };
 		139305610B0332BCD8C9E695 /* AutomaticMirroringTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2371367808ADE838EBDDE175 /* AutomaticMirroringTests.swift */; };
 		17E6E1E511F4EF2A9228B5EC /* MonitorController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C29CA3BB82D1D4ED81885826 /* MonitorController.swift */; };
+		1A7496A1CBE19EDAF3963D33 /* MonitorProfiles.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BF5103EB7D4F686A2AACC9C /* MonitorProfiles.swift */; };
 		22111DE4E007DF2265EFA6D6 /* MonitorController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C29CA3BB82D1D4ED81885826 /* MonitorController.swift */; };
-		2907AF025482431A092BE23E /* HuaweiTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB80A43FF0C45980CAF7894B /* HuaweiTransport.swift */; };
+		2907AF025482431A092BE23E /* DDCTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB80A43FF0C45980CAF7894B /* DDCTransport.swift */; };
 		48135A422F544751FCC40558 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F21AECE9D480FAF9EF91CD2F /* Cocoa.framework */; };
 		4AA309C70E588B3C68915A14 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F21AECE9D480FAF9EF91CD2F /* Cocoa.framework */; };
 		65CEF8F03EB39C33887D1A23 /* AutomaticMirroring.swift in Sources */ = {isa = PBXBuildFile; fileRef = 445F5104F8E332930142B831 /* AutomaticMirroring.swift */; };
 		678A6AC2BEED91A4A06C83B9 /* DisplayProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1CA1ABCCBDBD69322AF210E7 /* DisplayProtocol.swift */; };
 		6D06E7B36F82C80C76859A60 /* MonitorPreferencesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4AF20304DD9AB21202881C6 /* MonitorPreferencesTests.swift */; };
+		6D09D17EF8179D4F909B6D31 /* MonitorProfiles.json in Resources */ = {isa = PBXBuildFile; fileRef = D0DB3731F2EB9FA07D187508 /* MonitorProfiles.json */; };
 		8D638CA5CAC02612398B9160 /* MonitorPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75B654A57CDA0505DA40BB07 /* MonitorPreferences.swift */; };
 		B27132A3DAD80F81971284AE /* DisplayProtocolTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DD7D1F6A47C82F2A8852320 /* DisplayProtocolTests.swift */; };
 		CBB7160F5DC22E759BC75F73 /* DisplayProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1CA1ABCCBDBD69322AF210E7 /* DisplayProtocol.swift */; };
@@ -26,6 +28,7 @@
 		E5DD7A267473B1D00926548C /* QuartzDesktopMirroring.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28FB769CCB33E2B99C85C76C /* QuartzDesktopMirroring.swift */; };
 		E7B5D9DAA9617229EDCDDC72 /* MonitorMenuBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5241EC59621FB25A7BC7E687 /* MonitorMenuBar.swift */; };
 		EB4CBB6A590012A6F75C3E8B /* MonitorInputApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7EB4674D10E6B10D8B6755FE /* MonitorInputApp.swift */; };
+		F11183A485E5B5007A505CC2 /* MonitorProfiles.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BF5103EB7D4F686A2AACC9C /* MonitorProfiles.swift */; };
 		F321B8F5B77542CE9CBDA8F5 /* AlreadyOnMacToast.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3FA3FED6C29FD552DDBA3794 /* AlreadyOnMacToast.swift */; };
 /* End PBXBuildFile section */
 
@@ -36,6 +39,7 @@
 		28FB769CCB33E2B99C85C76C /* QuartzDesktopMirroring.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = QuartzDesktopMirroring.swift; sourceTree = "<group>"; };
 		2CB93DC3E0F819CE75AD2F5C /* MonitorInputTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MonitorInputTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		2D591B556BAB6FBB43F186C8 /* MonitorWorker.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MonitorWorker.swift; sourceTree = "<group>"; };
+		3BF5103EB7D4F686A2AACC9C /* MonitorProfiles.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MonitorProfiles.swift; sourceTree = "<group>"; };
 		3FA3FED6C29FD552DDBA3794 /* AlreadyOnMacToast.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AlreadyOnMacToast.swift; sourceTree = "<group>"; };
 		445F5104F8E332930142B831 /* AutomaticMirroring.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AutomaticMirroring.swift; sourceTree = "<group>"; };
 		4DD7D1F6A47C82F2A8852320 /* DisplayProtocolTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DisplayProtocolTests.swift; sourceTree = "<group>"; };
@@ -47,7 +51,8 @@
 		9827212379375D0A453A54A5 /* MonitorInput.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MonitorInput.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		C29CA3BB82D1D4ED81885826 /* MonitorController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MonitorController.swift; sourceTree = "<group>"; };
 		C4AF20304DD9AB21202881C6 /* MonitorPreferencesTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MonitorPreferencesTests.swift; sourceTree = "<group>"; };
-		DB80A43FF0C45980CAF7894B /* HuaweiTransport.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HuaweiTransport.swift; sourceTree = "<group>"; };
+		D0DB3731F2EB9FA07D187508 /* MonitorProfiles.json */ = {isa = PBXFileReference; includeInIndex = 1; path = MonitorProfiles.json; sourceTree = "<group>"; };
+		DB80A43FF0C45980CAF7894B /* DDCTransport.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DDCTransport.swift; sourceTree = "<group>"; };
 		F21AECE9D480FAF9EF91CD2F /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.15.sdk/System/Library/Frameworks/Cocoa.framework; sourceTree = DEVELOPER_DIR; };
 /* End PBXFileReference section */
 
@@ -117,6 +122,7 @@
 				39403B6BDED64B79A3C92D48 /* Tests */,
 				85A293F36B374D8A21E00F3A /* Info.plist */,
 				70163C6305293A3FB808BF98 /* README.md */,
+				887E3431977E867FE69ED622 /* Resources */,
 			);
 			sourceTree = "<group>";
 		};
@@ -131,10 +137,19 @@
 			path = Sources;
 			sourceTree = "<group>";
 		};
+		887E3431977E867FE69ED622 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				D0DB3731F2EB9FA07D187508 /* MonitorProfiles.json */,
+			);
+			name = Resources;
+			path = Resources;
+			sourceTree = "<group>";
+		};
 		893BE1FFF3A06326E03CB13C /* Hardware */ = {
 			isa = PBXGroup;
 			children = (
-				DB80A43FF0C45980CAF7894B /* HuaweiTransport.swift */,
+				DB80A43FF0C45980CAF7894B /* DDCTransport.swift */,
 				2D591B556BAB6FBB43F186C8 /* MonitorWorker.swift */,
 				28FB769CCB33E2B99C85C76C /* QuartzDesktopMirroring.swift */,
 			);
@@ -149,6 +164,7 @@
 				C29CA3BB82D1D4ED81885826 /* MonitorController.swift */,
 				75B654A57CDA0505DA40BB07 /* MonitorPreferences.swift */,
 				445F5104F8E332930142B831 /* AutomaticMirroring.swift */,
+				3BF5103EB7D4F686A2AACC9C /* MonitorProfiles.swift */,
 			);
 			name = Core;
 			path = Core;
@@ -242,6 +258,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				6D09D17EF8179D4F909B6D31 /* MonitorProfiles.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -258,10 +275,11 @@
 				EB4CBB6A590012A6F75C3E8B /* MonitorInputApp.swift in Sources */,
 				E7B5D9DAA9617229EDCDDC72 /* MonitorMenuBar.swift in Sources */,
 				F321B8F5B77542CE9CBDA8F5 /* AlreadyOnMacToast.swift in Sources */,
-				2907AF025482431A092BE23E /* HuaweiTransport.swift in Sources */,
+				2907AF025482431A092BE23E /* DDCTransport.swift in Sources */,
 				0E40BA4A9AD1CB4F8BE6CDEF /* MonitorWorker.swift in Sources */,
 				65CEF8F03EB39C33887D1A23 /* AutomaticMirroring.swift in Sources */,
 				E5DD7A267473B1D00926548C /* QuartzDesktopMirroring.swift in Sources */,
+				1A7496A1CBE19EDAF3963D33 /* MonitorProfiles.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -277,6 +295,7 @@
 				6D06E7B36F82C80C76859A60 /* MonitorPreferencesTests.swift in Sources */,
 				CFD9156D867C688BCF5EA03A /* AutomaticMirroring.swift in Sources */,
 				139305610B0332BCD8C9E695 /* AutomaticMirroringTests.swift in Sources */,
+				F11183A485E5B5007A505CC2 /* MonitorProfiles.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

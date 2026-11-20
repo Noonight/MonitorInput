@@ -5,7 +5,7 @@ final class QuartzDesktopMirroring: DesktopMirroring {
     private var manuallyRestored: DisplayIdentity?
     private var restorationIncomplete = false
 
-    func mirrorHuawei(_ identity: DisplayIdentity) -> DesktopMirrorState {
+    func mirrorDisplay(_ identity: DisplayIdentity) -> DesktopMirrorState {
         if let saved = savedLayout, saved.identity != identity {
             let restoration = restoreLayout()
             guard restoration == .inactive else { return restoration }
@@ -21,18 +21,18 @@ final class QuartzDesktopMirroring: DesktopMirroring {
         }
         if manuallyRestored == identity { return .inactive }
 
-        let matching = displays.filter { $0.isHuawei(identity) }
+        let matching = displays.filter { $0.matchesDisplay(identity) }
         let builtIns = displays.filter { display in
             CGDisplayIsBuiltin(display.id) != 0 && CGDisplayIsActive(display.id) != 0
                 && CGDisplayIsAsleep(display.id) == 0
         }
-        guard matching.count == 1, let huawei = matching.first,
+        guard matching.count == 1, let external = matching.first,
               builtIns.count == 1, let builtIn = builtIns.first
         else { return .unavailable }
 
-        if mirrorMember(huawei.id, builtIn.id) != nil { return .active }
-        guard CGDisplayIsActive(huawei.id) != 0,
-              CGDisplayIsInMirrorSet(huawei.id) == 0, CGDisplayIsInMirrorSet(builtIn.id) == 0
+        if mirrorMember(external.id, builtIn.id) != nil { return .active }
+        guard CGDisplayIsActive(external.id) != 0,
+              CGDisplayIsInMirrorSet(external.id) == 0, CGDisplayIsInMirrorSet(builtIn.id) == 0
         else { return .unavailable }
 
         let main = CGMainDisplayID()
@@ -43,13 +43,13 @@ final class QuartzDesktopMirroring: DesktopMirroring {
             let primary = original.remove(at: index)
             original.append(primary)
         }
-        guard reconfigure({ CGConfigureDisplayMirrorOfDisplay($0, huawei.id, builtIn.id) }),
-              let secondary = mirrorMember(huawei.id, builtIn.id)
+        guard reconfigure({ CGConfigureDisplayMirrorOfDisplay($0, external.id, builtIn.id) }),
+              let secondary = mirrorMember(external.id, builtIn.id)
         else { return .unavailable }
 
         savedLayout = SavedLayout(
-            identity: identity, huawei: huawei, builtIn: builtIn, secondary: secondary,
-            main: main, original: original, peersAfterMirroring: peers(in: displays, huawei: huawei, builtIn: builtIn)
+            identity: identity, external: external, builtIn: builtIn, secondary: secondary,
+            main: main, original: original, peersAfterMirroring: peers(in: displays, external: external, builtIn: builtIn)
         )
         restorationIncomplete = false
         return .active
@@ -64,9 +64,9 @@ final class QuartzDesktopMirroring: DesktopMirroring {
             return .inactive
         }
 
-        let samePeers = peers(in: displays, huawei: saved.huawei, builtIn: saved.builtIn) == saved.peersAfterMirroring
+        let samePeers = peers(in: displays, external: saved.external, builtIn: saved.builtIn) == saved.peersAfterMirroring
         if samePeers, restoreOriginalLayout(saved) {
-            if mirrorMember(saved.huawei.id, saved.builtIn.id) == nil {
+            if mirrorMember(saved.external.id, saved.builtIn.id) == nil {
                 savedLayout = nil
                 restorationIncomplete = !saved.isOriginalLayout
                 return restorationIncomplete ? .restoreFailed : .inactive
@@ -76,7 +76,7 @@ final class QuartzDesktopMirroring: DesktopMirroring {
         // A changed topology or unavailable mode can prevent exact restoration.
         if let current = onlineDisplays(), saved.ownsMirror(in: current),
            reconfigure({ CGConfigureDisplayMirrorOfDisplay($0, saved.secondary, kCGNullDirectDisplay) }),
-           mirrorMember(saved.huawei.id, saved.builtIn.id) == nil {
+           mirrorMember(saved.external.id, saved.builtIn.id) == nil {
             savedLayout = nil
         }
         restorationIncomplete = !saved.isOriginalLayout
@@ -87,7 +87,7 @@ final class QuartzDesktopMirroring: DesktopMirroring {
         reconfigure { configuration in
             let unmirror = CGConfigureDisplayMirrorOfDisplay(configuration, saved.secondary, kCGNullDirectDisplay)
             guard unmirror == .success else { return unmirror }
-            for screen in saved.original where screen.key == saved.huawei || screen.key == saved.builtIn {
+            for screen in saved.original where screen.key == saved.external || screen.key == saved.builtIn {
                 let mode = CGConfigureDisplayWithDisplayMode(configuration, screen.key.id, screen.mode, nil)
                 guard mode == .success else { return mode }
             }
@@ -99,9 +99,9 @@ final class QuartzDesktopMirroring: DesktopMirroring {
         }
     }
 
-    private func peers(in displays: [ScreenKey], huawei: ScreenKey, builtIn: ScreenKey) -> [ScreenKey: PeerLayout] {
+    private func peers(in displays: [ScreenKey], external: ScreenKey, builtIn: ScreenKey) -> [ScreenKey: PeerLayout] {
         var result: [ScreenKey: PeerLayout] = [:]
-        for display in displays where display != huawei && display != builtIn {
+        for display in displays where display != external && display != builtIn {
             result[display] = PeerLayout(display.id)
         }
         return result
@@ -142,9 +142,9 @@ final class QuartzDesktopMirroring: DesktopMirroring {
 
         var isCurrent: Bool { CGDisplayIsOnline(id) != 0 && ScreenKey(id) == self }
 
-        func isHuawei(_ identity: DisplayIdentity) -> Bool {
-            guard CGDisplayIsBuiltin(id) == 0, vendor == DisplayProtocol.vendorID, model == DisplayProtocol.modelID,
-                  let expected = identity.serialNumber
+        func matchesDisplay(_ identity: DisplayIdentity) -> Bool {
+            guard let product = identity.product, CGDisplayIsBuiltin(id) == 0,
+                  vendor == product.vendorID, model == product.modelID, let expected = identity.serialNumber
             else { return false }
             return serial == expected
         }
@@ -193,26 +193,26 @@ final class QuartzDesktopMirroring: DesktopMirroring {
 
     private struct SavedLayout {
         let identity: DisplayIdentity
-        let huawei: ScreenKey
+        let external: ScreenKey
         let builtIn: ScreenKey
         let secondary: CGDirectDisplayID
         let main: CGDirectDisplayID
         let original: [ScreenLayout]
         let peersAfterMirroring: [ScreenKey: PeerLayout]
 
-        var hasSameScreens: Bool { huawei.isCurrent && builtIn.isCurrent }
+        var hasSameScreens: Bool { external.isCurrent && builtIn.isCurrent }
 
         var isOriginalLayout: Bool {
-            mirrorMember(huawei.id, builtIn.id) == nil && CGMainDisplayID() == main
+            mirrorMember(external.id, builtIn.id) == nil && CGMainDisplayID() == main
                 && original.allSatisfy(\.matchesCurrent)
         }
 
         func ownsMirror(in displays: [ScreenKey]) -> Bool {
-            guard hasSameScreens, mirrorMember(huawei.id, builtIn.id) == secondary else { return false }
+            guard hasSameScreens, mirrorMember(external.id, builtIn.id) == secondary else { return false }
             return !displays.contains { display in
-                guard display != huawei, display != builtIn else { return false }
+                guard display != external, display != builtIn else { return false }
                 let source = CGDisplayMirrorsDisplay(display.id)
-                return source == huawei.id || source == builtIn.id
+                return source == external.id || source == builtIn.id
             }
         }
     }

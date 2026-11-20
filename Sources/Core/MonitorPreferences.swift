@@ -11,14 +11,49 @@ struct LastMonitorState: Codable, Equatable {
     let observedAt: Date
 }
 
+struct MonitorConfiguration: Codable {
+    var macInput: DisplayInput?
+    var aliases: [UInt8: String] = [:]
+    var observedInputs: Set<DisplayInput> = []
+    var lastSeen: LastMonitorState?
+    var hiddenInputs: Set<DisplayInput>?
+
+    func inputs(advertised: Set<DisplayInput>, profile: MonitorProfile?) -> Set<DisplayInput> {
+        var inputs = observedInputs.union(advertised)
+        if let profile { inputs.formUnion(profile.ports.keys) }
+        if let macInput { inputs.insert(macInput) }
+        return inputs
+    }
+
+    func isInputVisible(_ input: DisplayInput) -> Bool {
+        hiddenInputs?.contains(input) != true
+    }
+}
+
 final class MonitorPreferences {
     private let defaults: UserDefaults
     private static let leftClickKey = "leftClickAction"
     private static let mirrorKey = "mirrorsOtherInputs"
-    private let lastSeenKey = "lastMonitorState"
+    private static let lastSeenKey = "lastMonitorState"
+    private static let monitorKey = "monitorConfigurations"
+    private static let preferredKey = "preferredMonitor"
+    private var configurations: [String: MonitorConfiguration]
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
+        configurations = defaults.data(forKey: Self.monitorKey).flatMap {
+            try? JSONDecoder().decode([String: MonitorConfiguration].self, from: $0)
+        } ?? [:]
+        if let old = decodeLastSeen(), old.identity.product == nil,
+           configurations[old.identity.fingerprint] == nil {
+            // Before model discovery, the app only saved data for ZQE-CAA over USB-C.
+            configurations[old.identity.fingerprint] = MonitorConfiguration(
+                macInput: DisplayInput(rawValue: 0x10),
+                observedInputs: Set([old.input].compactMap { $0 }),
+                lastSeen: old
+            )
+            saveConfigurations()
+        }
     }
 
     var leftClickAction: LeftClickAction {
@@ -31,19 +66,69 @@ final class MonitorPreferences {
         set { defaults.set(newValue, forKey: Self.mirrorKey) }
     }
 
+    var preferredMonitor: String? {
+        get { defaults.string(forKey: Self.preferredKey) }
+        set { defaults.set(newValue, forKey: Self.preferredKey) }
+    }
+
     var lastSeen: LastMonitorState? {
-        guard let data = defaults.data(forKey: lastSeenKey) else { return nil }
+        if let preferredMonitor { return configurations[preferredMonitor]?.lastSeen }
+        return decodeLastSeen()
+    }
+
+    private func decodeLastSeen() -> LastMonitorState? {
+        guard let data = defaults.data(forKey: Self.lastSeenKey) else { return nil }
         return try? JSONDecoder().decode(LastMonitorState.self, from: data)
+    }
+
+    func configuration(for identity: DisplayIdentity) -> MonitorConfiguration {
+        configurations[identity.fingerprint] ?? MonitorConfiguration()
+    }
+
+    func assignMacInput(_ input: DisplayInput, for identity: DisplayIdentity) {
+        var config = configuration(for: identity)
+        config.macInput = input
+        config.observedInputs.insert(input)
+        configurations[identity.fingerprint] = config
+        saveConfigurations()
+    }
+
+    func renameInput(_ input: DisplayInput, for identity: DisplayIdentity, to title: String) {
+        let name = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        var config = configuration(for: identity)
+        config.aliases[input.rawValue] = name.isEmpty ? nil : String(name.prefix(60))
+        configurations[identity.fingerprint] = config
+        saveConfigurations()
+    }
+
+    func toggleInputVisibility(_ input: DisplayInput, for identity: DisplayIdentity) {
+        var config = configuration(for: identity)
+        var hidden = config.hiddenInputs ?? []
+        if hidden.remove(input) == nil { hidden.insert(input) }
+        config.hiddenInputs = hidden.isEmpty ? nil : hidden
+        configurations[identity.fingerprint] = config
+        saveConfigurations()
     }
 
     func remember(_ reading: MonitorReading, at date: Date = Date()) {
         let identity = reading.connection.identity
-        if reading.input == nil, let previous = lastSeen, previous.identity == identity, previous.input != nil {
-            return
+        var config = configuration(for: identity)
+        if let input = reading.input {
+            config.observedInputs.insert(input)
         }
-        let record = LastMonitorState(identity: identity, input: reading.input, observedAt: date)
-        if let data = try? JSONEncoder().encode(record) {
-            defaults.set(data, forKey: lastSeenKey)
+        if reading.input != nil || config.lastSeen?.input == nil {
+            config.lastSeen = LastMonitorState(identity: identity, input: reading.input, observedAt: date)
+        }
+        configurations[identity.fingerprint] = config
+        saveConfigurations()
+        if let record = config.lastSeen, let data = try? JSONEncoder().encode(record) {
+            defaults.set(data, forKey: Self.lastSeenKey)
+        }
+    }
+
+    private func saveConfigurations() {
+        if let data = try? JSONEncoder().encode(configurations) {
+            defaults.set(data, forKey: Self.monitorKey)
         }
     }
 }

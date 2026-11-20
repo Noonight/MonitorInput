@@ -2,22 +2,44 @@ import Darwin
 import Foundation
 import IOKit
 
-struct HuaweiTransport: MonitorTransport {
+struct DDCTransport: MonitorTransport {
     private let io = AVAccess()
 
-    func probe() -> MonitorStatus {
-        switch findEndpoint() {
-        case .found(let endpoint):
-            .connected(MonitorReading(connection: endpoint.connection, input: readInput(from: endpoint)))
-        case .disconnected: .disconnected
-        case .unavailable: .unavailable
-        case .ambiguous: .ambiguous
-        }
+    func probe(preferredFingerprint: String?) -> (inventory: MonitorInventory, status: MonitorStatus) {
+        let discovery = discover()
+        let inventory = discovery.inventory
+        let status = inventory.resolve(preferredFingerprint: preferredFingerprint)
+        guard case .connected(let target) = status,
+              let endpoint = discovery.endpoints.first(where: { $0.connection == target.connection })
+        else { return (inventory, status) }
+        return (inventory, .connected(MonitorReading(connection: target.connection, input: readInput(from: endpoint))))
     }
 
-    func requestInput(_ target: SwitchTarget, on connection: MonitorConnection) {
-        guard let io, case .found(let endpoint) = findEndpoint(), endpoint.connection == connection,
-              let currentInput = readInput(from: endpoint), currentInput != target.input,
+    func advertisedInputs(on connection: MonitorConnection) -> Set<DisplayInput>? {
+        guard let io, let endpoint = boundEndpoint(connection, preferredFingerprint: connection.identity.fingerprint)
+        else { return nil }
+        var bytes: [UInt8] = []
+        for _ in 0..<66 {
+            let offset = UInt16(bytes.count)
+            guard let reply = readDDC(
+                DisplayProtocol.capabilitiesRequest(offset: offset), from: endpoint, count: 38, io: io
+            ), let fragment = DisplayProtocol.capabilitiesFragment(in: reply, offset: offset) else { return nil }
+
+            let end = fragment.firstIndex(of: 0)
+            bytes.append(contentsOf: fragment[..<(end ?? fragment.endIndex)])
+            guard bytes.count <= 2048 else { return nil }
+            if fragment.isEmpty || end != nil {
+                guard let capabilities = String(bytes: bytes, encoding: .ascii) else { return nil }
+                let codes = DDCCapabilities.inputValues(in: capabilities)
+                return Set(codes.compactMap(DisplayInput.init(rawValue:)))
+            }
+        }
+        return nil
+    }
+
+    func requestInput(_ target: DisplayInput, on connection: MonitorConnection, preferredFingerprint: String?) {
+        guard let io, let endpoint = boundEndpoint(connection, preferredFingerprint: preferredFingerprint),
+              let currentInput = readInput(from: endpoint), currentInput != target,
               identity(at: endpoint.service, io: io) == connection.identity
         else { return }
 
@@ -25,15 +47,23 @@ struct HuaweiTransport: MonitorTransport {
         _ = io.send(DisplayProtocol.setInputFrame(target), to: endpoint.service)
     }
 
-    private func findEndpoint() -> Discovery {
-        guard let io else { return .unavailable }
+    private func boundEndpoint(_ connection: MonitorConnection, preferredFingerprint: String?) -> Endpoint? {
+        let discovery = discover()
+        guard case .connected(let selected) = discovery.inventory.resolve(preferredFingerprint: preferredFingerprint),
+              selected.connection == connection
+        else { return nil }
+        return discovery.endpoints.first { $0.connection == connection }
+    }
+
+    private func discover() -> Discovery {
+        guard let io else { return Discovery(endpoints: [], hasUnreadableDisplays: true) }
         var iterator: io_iterator_t = 0
         guard IOServiceGetMatchingServices(
             kIOMainPortDefault, IOServiceMatching("DCPAVServiceProxy"), &iterator
-        ) == KERN_SUCCESS else { return .unavailable }
+        ) == KERN_SUCCESS else { return Discovery(endpoints: [], hasUnreadableDisplays: true) }
         defer { IOObjectRelease(iterator) }
 
-        var match: Endpoint?
+        var endpoints: [Endpoint] = []
         var unreadable = false
         while true {
             let entry = IOIteratorNext(iterator)
@@ -47,34 +77,25 @@ struct HuaweiTransport: MonitorTransport {
             var registryID: UInt64 = 0
             guard IORegistryEntryGetRegistryEntryID(entry, &registryID) == KERN_SUCCESS,
                   let service = io.open(entry),
-                  let edid = io.read(from: service, address: 0x50, offset: 0, count: 128),
-                  DisplayProtocol.isValidBaseEDID(edid)
+                  let identity = identity(at: service, io: io)
             else {
                 unreadable = true
                 continue
             }
-            guard let identity = DisplayProtocol.huaweiIdentity(in: edid) else { continue }
-            if match != nil { return .ambiguous }
-            match = Endpoint(connection: MonitorConnection(identity: identity, registryID: registryID), service: service)
+            endpoints.append(Endpoint(connection: MonitorConnection(identity: identity, registryID: registryID), service: service))
         }
-
-        // An unreadable display cannot be ruled out as a second Huawei.
-        if unreadable { return .unavailable }
-        if let match { return .found(match) }
-        return .disconnected
+        return Discovery(endpoints: endpoints, hasUnreadableDisplays: unreadable)
     }
 
     private func identity(at service: AVService, io: AVAccess) -> DisplayIdentity? {
         guard let edid = io.read(from: service, address: 0x50, offset: 0, count: 128) else { return nil }
-        return DisplayProtocol.huaweiIdentity(in: edid)
+        return DisplayProtocol.identity(in: edid)
     }
 
     private func readInput(from endpoint: Endpoint) -> DisplayInput? {
         guard let io else { return nil }
         for _ in 0..<2 {
-            guard io.send(DisplayProtocol.getInputFrame, to: endpoint.service) else { continue }
-            Thread.sleep(forTimeInterval: 0.050)
-            if let reply = io.read(from: endpoint.service, address: 0x37, offset: 0x51, count: 12),
+            if let reply = readDDC(DisplayProtocol.getInputFrame, from: endpoint, count: 12, io: io),
                let input = DisplayProtocol.selectedInput(in: reply) {
                 return input
             }
@@ -82,16 +103,24 @@ struct HuaweiTransport: MonitorTransport {
         return nil
     }
 
+    private func readDDC(_ request: [UInt8], from endpoint: Endpoint, count: Int, io: AVAccess) -> [UInt8]? {
+        guard io.send(request, to: endpoint.service) else { return nil }
+        Thread.sleep(forTimeInterval: 0.050)
+        return io.read(from: endpoint.service, address: 0x37, offset: 0x51, count: count)
+    }
+
     private struct Endpoint {
         let connection: MonitorConnection
         let service: AVService
     }
 
-    private enum Discovery {
-        case found(Endpoint)
-        case disconnected
-        case unavailable
-        case ambiguous
+    private struct Discovery {
+        let endpoints: [Endpoint]
+        let hasUnreadableDisplays: Bool
+
+        var inventory: MonitorInventory {
+            MonitorInventory(connections: endpoints.map(\.connection), hasUnreadableDisplays: hasUnreadableDisplays)
+        }
     }
 }
 

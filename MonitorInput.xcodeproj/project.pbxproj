@@ -30,6 +30,8 @@
 		EB4CBB6A590012A6F75C3E8B /* MonitorInputApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7EB4674D10E6B10D8B6755FE /* MonitorInputApp.swift */; };
 		F11183A485E5B5007A505CC2 /* MonitorProfiles.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BF5103EB7D4F686A2AACC9C /* MonitorProfiles.swift */; };
 		F321B8F5B77542CE9CBDA8F5 /* AlreadyOnMacToast.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3FA3FED6C29FD552DDBA3794 /* AlreadyOnMacToast.swift */; };
+		F34F2ECA1E9E4E7CAF746DB1 /* MonitorSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5260C4F61A045FAA53C6D2D /* MonitorSettings.swift */; };
+		F9B156A7673C46CB94C14A17 /* AppIcon.icns in Resources */ = {isa = PBXBuildFile; fileRef = AC3743836BB14131BE027EBC /* AppIcon.icns */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -54,6 +56,8 @@
 		D0DB3731F2EB9FA07D187508 /* MonitorProfiles.json */ = {isa = PBXFileReference; includeInIndex = 1; path = MonitorProfiles.json; sourceTree = "<group>"; };
 		DB80A43FF0C45980CAF7894B /* DDCTransport.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DDCTransport.swift; sourceTree = "<group>"; };
 		F21AECE9D480FAF9EF91CD2F /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.15.sdk/System/Library/Frameworks/Cocoa.framework; sourceTree = DEVELOPER_DIR; };
+		A5260C4F61A045FAA53C6D2D /* MonitorSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MonitorSettings.swift; sourceTree = "<group>"; };
+		AC3743836BB14131BE027EBC /* AppIcon.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = AppIcon.icns; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -141,6 +145,7 @@
 			isa = PBXGroup;
 			children = (
 				D0DB3731F2EB9FA07D187508 /* MonitorProfiles.json */,
+				AC3743836BB14131BE027EBC /* AppIcon.icns */,
 			);
 			name = Resources;
 			path = Resources;
@@ -175,6 +180,7 @@
 			children = (
 				7EB4674D10E6B10D8B6755FE /* MonitorInputApp.swift */,
 				5241EC59621FB25A7BC7E687 /* MonitorMenuBar.swift */,
+				A5260C4F61A045FAA53C6D2D /* MonitorSettings.swift */,
 				3FA3FED6C29FD552DDBA3794 /* AlreadyOnMacToast.swift */,
 			);
 			name = App;
@@ -259,6 +265,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				6D09D17EF8179D4F909B6D31 /* MonitorProfiles.json in Resources */,
+				F9B156A7673C46CB94C14A17 /* AppIcon.icns in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -274,6 +281,7 @@
 				8D638CA5CAC02612398B9160 /* MonitorPreferences.swift in Sources */,
 				EB4CBB6A590012A6F75C3E8B /* MonitorInputApp.swift in Sources */,
 				E7B5D9DAA9617229EDCDDC72 /* MonitorMenuBar.swift in Sources */,
+				F34F2ECA1E9E4E7CAF746DB1 /* MonitorSettings.swift in Sources */,
 				F321B8F5B77542CE9CBDA8F5 /* AlreadyOnMacToast.swift in Sources */,
 				2907AF025482431A092BE23E /* DDCTransport.swift in Sources */,
 				0E40BA4A9AD1CB4F8BE6CDEF /* MonitorWorker.swift in Sources */,

@@ -96,15 +96,22 @@ final class MonitorPreferences {
     func renameInput(_ input: DisplayInput, for identity: DisplayIdentity, to title: String) {
         let name = title.trimmingCharacters(in: .whitespacesAndNewlines)
         var config = configuration(for: identity)
-        config.aliases[input.rawValue] = name.isEmpty ? nil : String(name.prefix(60))
+        let alias = name.isEmpty ? nil : String(name.prefix(60))
+        guard config.aliases[input.rawValue] != alias else { return }
+        config.aliases[input.rawValue] = alias
         configurations[identity.fingerprint] = config
         saveConfigurations()
     }
 
-    func toggleInputVisibility(_ input: DisplayInput, for identity: DisplayIdentity) {
+    func setInputVisibility(_ input: DisplayInput, visible: Bool, for identity: DisplayIdentity) {
         var config = configuration(for: identity)
+        guard config.isInputVisible(input) != visible else { return }
         var hidden = config.hiddenInputs ?? []
-        if hidden.remove(input) == nil { hidden.insert(input) }
+        if visible {
+            hidden.remove(input)
+        } else {
+            hidden.insert(input)
+        }
         config.hiddenInputs = hidden.isEmpty ? nil : hidden
         configurations[identity.fingerprint] = config
         saveConfigurations()

@@ -1,5 +1,6 @@
 import AppKit
 import OSLog
+import SwiftUI
 
 @MainActor
 final class MonitorMenuBar: NSObject, NSApplicationDelegate {
@@ -24,8 +25,11 @@ final class MonitorMenuBar: NSObject, NSApplicationDelegate {
     private var screenObserver: NSObjectProtocol?
     private var wakeObserver: NSObjectProtocol?
     private let alreadyOnMac = AlreadyOnMacToast()
+    private lazy var settings = MonitorSettingsModel { [weak self] in self?.applySetting($0) }
+    private var settingsWindow: NSWindow?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        installApplicationMenu()
         if let button = item.button {
             button.target = self
             button.action = #selector(statusClicked(_:))
@@ -49,6 +53,19 @@ final class MonitorMenuBar: NSObject, NSApplicationDelegate {
         refresh()
     }
 
+    private func installApplicationMenu() {
+        let applicationMenu = NSMenu(title: "MonitorInput")
+        let quitItem = NSMenuItem(title: "Завершить MonitorInput", action: #selector(quit), keyEquivalent: "q")
+        quitItem.target = self
+        applicationMenu.addItem(quitItem)
+
+        let applicationItem = NSMenuItem()
+        applicationItem.submenu = applicationMenu
+        let mainMenu = NSMenu()
+        mainMenu.addItem(applicationItem)
+        NSApp.mainMenu = mainMenu
+    }
+
     func applicationWillTerminate(_ notification: Notification) {
         _ = automaticMirroring.update(nil, enabled: false)
         alreadyOnMac.dismiss()
@@ -56,6 +73,11 @@ final class MonitorMenuBar: NSObject, NSApplicationDelegate {
         if let screenObserver { NotificationCenter.default.removeObserver(screenObserver) }
         if let wakeObserver { NSWorkspace.shared.notificationCenter.removeObserver(wakeObserver) }
         NSStatusBar.system.removeStatusItem(item)
+    }
+
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        showSettings()
+        return false
     }
 
     @objc private func statusClicked(_ sender: NSStatusBarButton) {
@@ -232,6 +254,7 @@ final class MonitorMenuBar: NSObject, NSApplicationDelegate {
     }
 
     private func renderStatusItem() {
+        if settingsWindow?.isVisible == true { updateSettings() }
         guard let button = item.button else { return }
         let symbol: String
         if switchingTo != nil {
@@ -253,23 +276,17 @@ final class MonitorMenuBar: NSObject, NSApplicationDelegate {
         guard !isShowingMenu, let button = item.button else { return }
         alreadyOnMac.dismiss()
         isShowingMenu = true
-        let previousSelection = preferences.preferredMonitor
-        let previousMonitor = selectedIdentity?.fingerprint
         let menu = makeMenu()
         menu.popUp(positioning: nil, at: NSPoint(x: 0, y: button.bounds.minY), in: button)
         isShowingMenu = false
-        if let preferred = preferences.preferredMonitor, preferred != previousSelection, preferred != previousMonitor {
-            mirrorState = automaticMirroring.update(nil, enabled: false) ?? .inactive
-        } else if !preferences.mirrorsOtherInputs {
-            updateMirroring(nil)
-        }
         refresh()
     }
 
     private func makeMenu() -> NSMenu {
         let menu = NSMenu()
         menu.autoenablesItems = false
-        menu.minimumWidth = 290
+        menu.appearance = NSApp.effectiveAppearance
+        menu.minimumWidth = 235
 
         let identity = selectedIdentity
         let header = NSMenuItem(title: identity.map(monitorName) ?? "Вход монитора", action: nil, keyEquivalent: "")
@@ -282,41 +299,21 @@ final class MonitorMenuBar: NSObject, NSApplicationDelegate {
         header.image = icon("display")
         header.isEnabled = false
         menu.addItem(header)
-        menu.addItem(.separator())
 
-        if let selector = makeMonitorSelector() { menu.addItem(selector) }
         if let identity {
             let configuration = preferences.configuration(for: identity)
             let inputs = availableInputs(for: identity).sorted { $0.rawValue < $1.rawValue }
             let visibleInputs = inputs.filter { configuration.isInputVisible($0) }
+            if !visibleInputs.isEmpty { menu.addItem(.separator()) }
             for input in visibleInputs {
                 menu.addItem(sourceItem(input, on: identity, isMac: configuration.macInput == input))
-            }
-            if !visibleInputs.isEmpty {
-                menu.addItem(NSMenuItem.sectionHeader(title: "Сигнал на входах неизвестен"))
-            }
-            if !inputs.isEmpty {
-                menu.addItem(inputSettings(for: identity, inputs: inputs, configuration: configuration))
             }
         }
         if switchingTo != nil || notice != nil {
             menu.addItem(NSMenuItem.sectionHeader(title: summary))
         }
-        if let details = makeDetails() { menu.addItem(details) }
-
         menu.addItem(.separator())
-        let quickSwitch = command("Левый клик переключает на Mac", #selector(toggleQuickSwitch), symbol: "cursorarrow.click")
-        quickSwitch.state = preferences.leftClickAction == .selectMac ? .on : .off
-        menu.addItem(quickSwitch)
-        let mirroring = command("Зеркалировать при другом входе", #selector(toggleMirroring), symbol: "rectangle.on.rectangle")
-        mirroring.state = preferences.mirrorsOtherInputs ? .on : .off
-        switch mirrorState {
-        case .inactive: break
-        case .active: mirroring.subtitle = "Рабочий стол на экране MacBook"
-        case .unavailable: mirroring.subtitle = "Зеркалирование сейчас недоступно"
-        case .restoreFailed: mirroring.subtitle = "Раскладка восстановлена не полностью"
-        }
-        menu.addItem(mirroring)
+        menu.addItem(command("Настройки…", #selector(showSettings), key: ",", symbol: "gearshape"))
         menu.addItem(command("Выход", #selector(quit), key: "q", symbol: "power"))
         return menu
     }
@@ -330,7 +327,7 @@ final class MonitorMenuBar: NSObject, NSApplicationDelegate {
         let title = inputTitle(target, on: identity)
         let port = portName(target, on: identity)
         let menuItem = command(title, #selector(sourceChosen(_:)), symbol: isMac ? "laptopcomputer" : "cable.connector")
-        menuItem.subtitle = title == port ? target.hexCode : "\(port) · \(target.hexCode)"
+        if title != port { menuItem.subtitle = port }
         menuItem.state = reading?.input == target ? .on : .off
         if let connection = switchableConnection, connection.identity == identity, switchingTo == nil {
             menuItem.representedObject = SourceSelection(target: target, connection: connection)
@@ -345,169 +342,135 @@ final class MonitorMenuBar: NSObject, NSApplicationDelegate {
         select(selection.target, expected: selection.connection, showsFailure: false)
     }
 
-    private func makeMonitorSelector() -> NSMenuItem? {
-        let knownConnections = connections.isEmpty ? switchableConnection.map { [$0] } ?? [] : connections
-        guard !knownConnections.isEmpty else { return nil }
-        let item = NSMenuItem(title: "Монитор", action: nil, keyEquivalent: "")
-        item.image = icon("display.2")
-        let submenu = NSMenu()
-        submenu.autoenablesItems = false
-        let automatic = command("Выбирать автоматически", #selector(chooseMonitor(_:)), symbol: "checkmark.circle")
-        automatic.state = preferences.preferredMonitor == nil ? .on : .off
-        submenu.addItem(automatic)
-        submenu.addItem(.separator())
-
-        let grouped = Dictionary(grouping: knownConnections, by: { $0.identity.fingerprint })
-        for group in grouped.values.sorted(by: {
-            let first = $0[0].identity
-            let second = $1[0].identity
-            return (monitorName(first), first.fingerprint) < (monitorName(second), second.fingerprint)
-        }) {
-            let identity = group[0].identity
-            let display = command(monitorName(identity), #selector(chooseMonitor(_:)), symbol: "display")
-            display.subtitle = group.count == 1 ? String(identity.fingerprint.prefix(8)) : "Несколько экранов с одним EDID"
-            display.representedObject = identity.fingerprint
-            display.state = preferences.preferredMonitor == identity.fingerprint ? .on : .off
-            display.isEnabled = group.count == 1
-            submenu.addItem(display)
-        }
-        item.submenu = submenu
-        return item
-    }
-
-    @objc private func chooseMonitor(_ sender: NSMenuItem) {
-        guard switchingTo == nil else { return }
-        let fingerprint = sender.representedObject as? String
-        guard preferences.preferredMonitor != fingerprint else { return }
-        preferences.preferredMonitor = fingerprint
-        switchGeneration &+= 1
-        status = nil
-        lastConnection = nil
-        capabilities = nil
-        notice = nil
-        renderStatusItem()
-    }
-
-    private struct PortPreference {
-        let input: DisplayInput
-        let identity: DisplayIdentity
-    }
-
-    private func inputSettings(
-        for identity: DisplayIdentity, inputs: [DisplayInput], configuration: MonitorConfiguration
-    ) -> NSMenuItem {
-        let item = NSMenuItem(title: "Настроить входы", action: nil, keyEquivalent: "")
-        item.image = icon("slider.horizontal.3")
-        let submenu = NSMenu()
-        submenu.autoenablesItems = false
-        let mac = inputOptions(
-            "Вход Mac", symbol: "laptopcomputer", inputs: inputs, for: identity,
-            action: #selector(assignMacInput(_:)), checked: { $0 == configuration.macInput }
-        )
-        mac.subtitle = configuration.macInput.map { portName($0, on: identity) } ?? "Выберите порт, к которому подключён Mac"
-        mac.isEnabled = switchingTo == nil
-        submenu.addItem(mac)
-        submenu.addItem(inputOptions(
-            "Показывать входы", symbol: "eye", inputs: inputs, for: identity,
-            action: #selector(toggleInputVisibility(_:)), checked: configuration.isInputVisible
-        ))
-        submenu.addItem(inputOptions(
-            "Переименовать вход", symbol: "pencil", inputs: inputs, for: identity, action: #selector(renameInput(_:))
-        ))
-        item.submenu = submenu
-        return item
-    }
-
-    private func inputOptions(
-        _ title: String, symbol: String, inputs: [DisplayInput], for identity: DisplayIdentity,
-        action: Selector, checked: ((DisplayInput) -> Bool)? = nil
-    ) -> NSMenuItem {
-        let item = NSMenuItem(title: title, action: nil, keyEquivalent: "")
-        item.image = icon(symbol)
-        let submenu = NSMenu()
-        submenu.autoenablesItems = false
-        let aliases = preferences.configuration(for: identity).aliases
-        for input in inputs {
-            let port = portName(input, on: identity)
-            let choice = NSMenuItem(title: aliases[input.rawValue] ?? port, action: action, keyEquivalent: "")
-            choice.target = self
-            choice.representedObject = PortPreference(input: input, identity: identity)
-            choice.subtitle = choice.title == port ? input.hexCode : "\(port) · \(input.hexCode)"
-            choice.state = checked?(input) == true ? .on : .off
-            submenu.addItem(choice)
-        }
-        item.submenu = submenu
-        return item
-    }
-
-    @objc private func assignMacInput(_ sender: NSMenuItem) {
-        guard switchingTo == nil, let selection = sender.representedObject as? PortPreference else { return }
-        preferences.assignMacInput(selection.input, for: selection.identity)
-        notice = nil
-        renderStatusItem()
-    }
-
-    @objc private func toggleInputVisibility(_ sender: NSMenuItem) {
-        guard let selection = sender.representedObject as? PortPreference else { return }
-        preferences.toggleInputVisibility(selection.input, for: selection.identity)
-    }
-
-    @objc private func renameInput(_ sender: NSMenuItem) {
-        guard let selection = sender.representedObject as? PortPreference else { return }
-        Task {
-            let identity = selection.identity
-            let port = portName(selection.input, on: identity)
-            let alert = NSAlert()
-            alert.messageText = "Название входа \(port)"
-            alert.informativeText = "Пустое поле вернёт стандартную подпись."
-            alert.addButton(withTitle: "Сохранить")
-            alert.addButton(withTitle: "Отмена")
-            let value = preferences.configuration(for: identity).aliases[selection.input.rawValue] ?? ""
-            let name = NSTextField(string: value)
-            name.frame = NSRect(x: 0, y: 0, width: 250, height: 24)
-            name.placeholderString = "Например, Linux или консоль"
-            alert.accessoryView = name
-            alert.window.initialFirstResponder = name
-            NSApp.activate()
-            if alert.runModal() == .alertFirstButtonReturn {
-                preferences.renameInput(selection.input, for: identity, to: name.stringValue)
-                renderStatusItem()
-            }
-        }
-    }
-
-    private func makeDetails() -> NSMenuItem? {
-        let previous = preferences.lastSeen
-        guard let identity = selectedIdentity else { return nil }
-        let isCached = reading == nil
-        let details = NSMenuItem(
-            title: isCached ? "Последнее подключение" : "Сведения о мониторе",
-            action: nil,
-            keyEquivalent: ""
-        )
-        details.image = icon(isCached ? "clock" : "info.circle")
-        let submenu = NSMenu()
-        submenu.autoenablesItems = false
-        if isCached, let previous {
-            let formatted = previous.observedAt.formatted(
-                Date.FormatStyle(date: .abbreviated, time: .shortened, locale: Locale(identifier: "ru_RU"))
+    @objc private func showSettings() {
+        updateSettings()
+        settings.refreshLoginStatus()
+        let window: NSWindow
+        if let settingsWindow {
+            window = settingsWindow
+        } else {
+            window = NSWindow(
+                contentRect: NSRect(x: 0, y: 0, width: 604, height: 508),
+                styleMask: [.titled, .closable, .resizable],
+                backing: .buffered,
+                defer: false
             )
-            submenu.addItem(NSMenuItem.sectionHeader(title: formatted))
-            submenu.addItem(NSMenuItem.sectionHeader(title: monitorName(identity)))
-            if let input = previous.input {
-                submenu.addItem(NSMenuItem.sectionHeader(title: "Был выбран \(inputTitle(input, on: identity))"))
+            window.title = "Настройки MonitorInput"
+            window.tabbingMode = .disallowed
+            window.collectionBehavior.insert(.fullScreenNone)
+            window.standardWindowButton(.miniaturizeButton)?.isHidden = true
+            window.standardWindowButton(.zoomButton)?.isHidden = true
+            window.isReleasedWhenClosed = false
+            let host = NSHostingController(rootView: MonitorSettingsView(model: settings))
+            host.sizingOptions = []
+            window.contentViewController = host
+            window.setContentSize(NSSize(width: 604, height: 508))
+            window.contentMinSize = NSSize(width: 520, height: 390)
+            window.center()
+            window.setFrameAutosaveName("MonitorInput.Settings")
+            settingsWindow = window
+        }
+        NSApp.activate()
+        window.makeKeyAndOrderFront(nil)
+        refresh()
+    }
+
+    private func updateSettings() {
+        var state = MonitorSettingsState()
+        state.preferredMonitor = preferences.preferredMonitor
+        state.choices = monitorChoices
+        state.connectionStatus = connectionStatus
+        state.isSwitching = switchingTo != nil
+        state.quickSwitch = preferences.leftClickAction == .selectMac
+        state.mirrorsOtherInputs = preferences.mirrorsOtherInputs
+        switch mirrorState {
+        case .inactive: break
+        case .active: state.mirrorStatus = "Рабочий стол сейчас на экране MacBook."
+        case .unavailable: state.mirrorStatus = "Зеркалирование сейчас недоступно."
+        case .restoreFailed: state.mirrorStatus = "Раскладка восстановлена не полностью."
+        }
+        if let identity = selectedIdentity {
+            let configuration = preferences.configuration(for: identity)
+            let ports = availableInputs(for: identity).sorted { $0.rawValue < $1.rawValue }.map { input in
+                MonitorSettingsState.Port(
+                    id: input,
+                    name: portName(input, on: identity),
+                    alias: configuration.aliases[input.rawValue] ?? "",
+                    isVisible: configuration.isInputVisible(input),
+                    isSelected: reading?.input == input
+                )
+            }
+            let previous = reading == nil ? configuration.lastSeen ?? preferences.lastSeen : nil
+            state.device = MonitorSettingsState.Device(
+                identity: identity,
+                name: monitorName(identity),
+                macInput: configuration.macInput,
+                ports: ports,
+                lastSeen: previous?.observedAt,
+                lastSource: previous?.input.map { inputTitle($0, on: identity) }
+            )
+        }
+        settings.update(state)
+    }
+
+    private var monitorChoices: [MonitorSettingsState.Choice] {
+        let known = connections.isEmpty ? switchableConnection.map { [$0] } ?? [] : connections
+        let grouped = Dictionary(grouping: known, by: { $0.identity.fingerprint })
+        var choices = grouped.values.compactMap { group -> MonitorSettingsState.Choice? in
+            guard let identity = group.first?.identity else { return nil }
+            let name = monitorName(identity)
+            let label = group.count > 1 ? "\(name) · одинаковый EDID" : name
+            return MonitorSettingsState.Choice(id: identity.fingerprint, name: label, canSelect: group.count == 1)
+        }
+        let nameCounts = Dictionary(grouping: choices, by: \.name).mapValues(\.count)
+        choices = choices.map { choice in
+            guard nameCounts[choice.name, default: 0] > 1 else { return choice }
+            return MonitorSettingsState.Choice(
+                id: choice.id, name: "\(choice.name) · \(choice.id.prefix(8))", canSelect: choice.canSelect
+            )
+        }
+        if let preferred = preferences.preferredMonitor, !choices.contains(where: { $0.id == preferred }) {
+            let name = preferences.lastSeen.map { monitorName($0.identity) } ?? "Сохранённый монитор"
+            choices.append(MonitorSettingsState.Choice(id: preferred, name: "\(name) · отключён", canSelect: false))
+        }
+        return choices.sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+    }
+
+    private func applySetting(_ setting: MonitorSetting) {
+        switch setting {
+        case .monitor(let fingerprint):
+            guard switchingTo == nil, preferences.preferredMonitor != fingerprint else { return }
+            let previous = selectedIdentity?.fingerprint
+            preferences.preferredMonitor = fingerprint
+            switchGeneration &+= 1
+            status = nil
+            lastConnection = nil
+            capabilities = nil
+            notice = nil
+            if let fingerprint, fingerprint != previous {
+                mirrorState = automaticMirroring.update(nil, enabled: false) ?? .inactive
+            }
+            refresh()
+        case .macInput(let input, let identity):
+            guard switchingTo == nil else { return }
+            preferences.assignMacInput(input, for: identity)
+            notice = nil
+            refresh()
+        case .alias(let name, let input, let identity):
+            preferences.renameInput(input, for: identity, to: name)
+        case .visibility(let visible, let input, let identity):
+            preferences.setInputVisibility(input, visible: visible, for: identity)
+        case .quickSwitch(let enabled):
+            preferences.leftClickAction = enabled ? .selectMac : .showMenu
+        case .mirroring(let enabled):
+            preferences.mirrorsOtherInputs = enabled
+            if enabled {
+                refresh()
+            } else {
+                updateMirroring(nil)
             }
         }
-        if let serial = identity.serialNumber {
-            let text = String(format: "%08X", serial)
-            submenu.addItem(NSMenuItem.sectionHeader(title: "Серийный номер EDID · \(text)"))
-        }
-        let copy = command("Скопировать ID EDID", #selector(copyIdentifier(_:)), symbol: "doc.on.doc")
-        copy.subtitle = String(identity.fingerprint.prefix(12))
-        copy.representedObject = identity.fingerprint
-        submenu.addItem(copy)
-        details.submenu = submenu
-        return details
+        renderStatusItem()
     }
 
     private func command(_ title: String, _ action: Selector, key: String = "", symbol: String) -> NSMenuItem {
@@ -521,20 +484,6 @@ final class MonitorMenuBar: NSObject, NSApplicationDelegate {
         let image = NSImage(systemSymbolName: name, accessibilityDescription: nil)
         image?.isTemplate = true
         return image
-    }
-
-    @objc private func copyIdentifier(_ sender: NSMenuItem) {
-        guard let identifier = sender.representedObject as? String else { return }
-        NSPasteboard.general.clearContents()
-        NSPasteboard.general.setString(identifier, forType: .string)
-    }
-
-    @objc private func toggleQuickSwitch() {
-        preferences.leftClickAction = preferences.leftClickAction == .selectMac ? .showMenu : .selectMac
-    }
-
-    @objc private func toggleMirroring() {
-        preferences.mirrorsOtherInputs.toggle()
     }
 
     @objc private func quit() {

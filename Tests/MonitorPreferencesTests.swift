@@ -79,7 +79,8 @@ final class MonitorPreferencesTests: XCTestCase {
         let monitor = DisplayIdentity(fingerprint: "monitor", serialNumber: 10)
         let preferences = MonitorPreferences(defaults: defaults)
         preferences.assignMacInput(.usbC, for: monitor)
-        preferences.toggleInputVisibility(.usbC, for: monitor)
+        preferences.setInputVisibility(.usbC, visible: false, for: monitor)
+        preferences.setInputVisibility(.usbC, visible: false, for: monitor)
 
         let reloaded = MonitorPreferences(defaults: defaults)
         let configuration = reloaded.configuration(for: monitor)
@@ -88,7 +89,7 @@ final class MonitorPreferencesTests: XCTestCase {
         XCTAssertEqual(configuration.macInput, .usbC)
         XCTAssertEqual(configuration.inputs(advertised: [.displayPort], profile: nil), [.usbC, .displayPort])
 
-        reloaded.toggleInputVisibility(.usbC, for: monitor)
+        reloaded.setInputVisibility(.usbC, visible: true, for: monitor)
         XCTAssertTrue(MonitorPreferences(defaults: defaults).configuration(for: monitor).isInputVisible(.usbC))
     }
 

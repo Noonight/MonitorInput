@@ -21,6 +21,7 @@ final class MonitorMenuBar: NSObject, NSApplicationDelegate {
     private var mirrorState: DesktopMirrorState = .inactive
     private var isRefreshing = false
     private var isShowingMenu = false
+    private var opensSettingsAfterMenu = false
     private var timer: Timer?
     private var screenObserver: NSObjectProtocol?
     private var wakeObserver: NSObjectProtocol?
@@ -55,6 +56,8 @@ final class MonitorMenuBar: NSObject, NSApplicationDelegate {
 
     private func installApplicationMenu() {
         let applicationMenu = NSMenu(title: "MonitorInput")
+        applicationMenu.addItem(command("Настройки…", #selector(showSettings), key: ",", symbol: "gearshape"))
+        applicationMenu.addItem(.separator())
         let quitItem = NSMenuItem(title: "Завершить MonitorInput", action: #selector(quit), keyEquivalent: "q")
         quitItem.target = self
         applicationMenu.addItem(quitItem)
@@ -279,7 +282,12 @@ final class MonitorMenuBar: NSObject, NSApplicationDelegate {
         let menu = makeMenu()
         menu.popUp(positioning: nil, at: NSPoint(x: 0, y: button.bounds.minY), in: button)
         isShowingMenu = false
-        refresh()
+        if opensSettingsAfterMenu {
+            opensSettingsAfterMenu = false
+            showSettings()
+        } else {
+            refresh()
+        }
     }
 
     private func makeMenu() -> NSMenu {
@@ -343,6 +351,10 @@ final class MonitorMenuBar: NSObject, NSApplicationDelegate {
     }
 
     @objc private func showSettings() {
+        if isShowingMenu {
+            opensSettingsAfterMenu = true
+            return
+        }
         updateSettings()
         settings.refreshLoginStatus()
         let window: NSWindow
@@ -357,7 +369,7 @@ final class MonitorMenuBar: NSObject, NSApplicationDelegate {
             )
             window.title = "Настройки MonitorInput"
             window.tabbingMode = .disallowed
-            window.collectionBehavior.insert(.fullScreenNone)
+            window.collectionBehavior.formUnion([.fullScreenNone, .moveToActiveSpace])
             window.standardWindowButton(.miniaturizeButton)?.isHidden = true
             window.standardWindowButton(.zoomButton)?.isHidden = true
             window.isReleasedWhenClosed = false
@@ -371,7 +383,8 @@ final class MonitorMenuBar: NSObject, NSApplicationDelegate {
             settingsWindow = window
         }
         NSApp.activate()
-        window.makeKeyAndOrderFront(nil)
+        window.orderFrontRegardless()
+        window.makeKey()
         refresh()
     }
 

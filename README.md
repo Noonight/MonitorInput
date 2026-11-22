@@ -2,6 +2,8 @@
 
 Приложение для строки меню macOS. Требуется Mac с Apple Silicon, macOS 14.4 или новее и подключение, на котором монитор отвечает на команды смены входа DDC/CI (`VCP 0x60`). На HUAWEI MateView GT ZQE‑CAA проверено переключение между USB‑C и DisplayPort.
 
+![Меню MonitorInput с выбором входов Windows и Mac](docs/images/monitorinput-menu.png)
+
 ## Установка
 
 Скачайте образ `.dmg` со страницы релиза. [Последний релиз MonitorInput](https://github.com/Noonight/MonitorInput/releases/latest)

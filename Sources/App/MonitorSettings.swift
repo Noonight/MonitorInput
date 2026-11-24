@@ -14,6 +14,7 @@ struct MonitorSettingsState: Equatable {
         let identity: DisplayIdentity
         let name: String
         let macInput: DisplayInput?
+        let toggleInputs: InputTogglePair
         let ports: [Port]
         let lastSeen: Date?
         let lastSource: String?
@@ -32,7 +33,7 @@ struct MonitorSettingsState: Equatable {
     var device: Device?
     var connectionStatus = "Проверка связи…"
     var isSwitching = false
-    var quickSwitch = true
+    var leftClickAction: LeftClickAction = .selectMac
     var mirrorsOtherInputs = false
     var mirrorStatus: String?
 }
@@ -42,7 +43,8 @@ enum MonitorSetting {
     case macInput(DisplayInput, DisplayIdentity)
     case alias(String, DisplayInput, DisplayIdentity)
     case visibility(Bool, DisplayInput, DisplayIdentity)
-    case quickSwitch(Bool)
+    case leftClickAction(LeftClickAction)
+    case toggleInputs(InputTogglePair, DisplayIdentity)
     case mirroring(Bool)
 }
 
@@ -208,10 +210,37 @@ struct MonitorSettingsView: View {
             }
 
             Section("Строка меню") {
-                Toggle("Левый клик переключает на Mac", isOn: Binding(
-                    get: { model.state.quickSwitch },
-                    set: { model.apply(.quickSwitch($0)) }
-                ))
+                Picker("Левый клик", selection: Binding(
+                    get: { model.state.leftClickAction },
+                    set: { model.apply(.leftClickAction($0)) }
+                )) {
+                    Text("Открыть меню").tag(LeftClickAction.showMenu)
+                    Text("Переключить на Mac").tag(LeftClickAction.selectMac)
+                    Text("Чередовать два входа").tag(LeftClickAction.toggleInputs)
+                }
+                .pickerStyle(.menu)
+                .disabled(model.state.isSwitching)
+
+                if model.state.leftClickAction == .toggleInputs {
+                    if let device = model.state.device, device.ports.count >= 2 {
+                        LabeledContent("Монитор", value: device.name)
+                        toggleInputPicker(
+                            "Первый вход", selection: \.first, excluding: device.toggleInputs.second, on: device
+                        )
+                        toggleInputPicker(
+                            "Второй вход", selection: \.second, excluding: device.toggleInputs.first, on: device
+                        )
+                        Text(device.toggleInputs.selection == nil
+                            ? "Выберите два входа. Пока пара не задана, левый клик открывает меню."
+                            : "Если активен вход вне пары, левый клик выберет первый.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    } else {
+                        Text("Выберите монитор с двумя известными входами на вкладке «Входы».")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
             }
 
             Section("Рабочий стол") {
@@ -231,6 +260,30 @@ struct MonitorSettingsView: View {
         }
         .formStyle(.grouped)
         .toggleStyle(.switch)
+    }
+
+    private func toggleInputPicker(
+        _ title: String, selection: WritableKeyPath<InputTogglePair, DisplayInput?>,
+        excluding other: DisplayInput?, on device: MonitorSettingsState.Device
+    ) -> some View {
+        Picker(title, selection: Binding(
+            get: { device.toggleInputs[keyPath: selection] },
+            set: { input in
+                guard let current = model.state.device, current.identity == device.identity else { return }
+                var pair = current.toggleInputs
+                pair[keyPath: selection] = input
+                model.apply(.toggleInputs(pair, device.identity))
+            }
+        )) {
+            Text("Не выбран").tag(DisplayInput?.none)
+            ForEach(device.ports.filter { $0.id != other }) { port in
+                let alias = port.alias.isEmpty && port.id == device.macInput ? "Этот Mac" : port.alias
+                Text(alias.isEmpty || alias == port.name ? port.name : "\(alias) · \(port.name)")
+                    .tag(Optional(port.id))
+            }
+        }
+        .pickerStyle(.menu)
+        .disabled(model.state.isSwitching)
     }
 }
 

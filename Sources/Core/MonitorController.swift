@@ -51,6 +51,26 @@ struct MonitorScan: Sendable {
     let advertisedInputs: Set<DisplayInput>
 }
 
+enum InputSelection: Equatable, Sendable {
+    case fixed(DisplayInput)
+    case alternate(first: DisplayInput, second: DisplayInput)
+
+    func isAllowed(in inputs: Set<DisplayInput>) -> Bool {
+        switch self {
+        case .fixed(let input): inputs.contains(input)
+        case .alternate(let first, let second):
+            first != second && inputs.contains(first) && inputs.contains(second)
+        }
+    }
+
+    func target(after current: DisplayInput) -> DisplayInput {
+        switch self {
+        case .fixed(let input): input
+        case .alternate(let first, let second): current == first ? second : first
+        }
+    }
+}
+
 enum SwitchResult: Equatable, Sendable {
     case selected(MonitorReading)
     case alreadySelected(MonitorReading)
@@ -75,7 +95,7 @@ struct MonitorController {
     var pause: (TimeInterval) -> Void = Thread.sleep(forTimeInterval:)
 
     func select(
-        _ target: DisplayInput, allowed: Set<DisplayInput>, expected: MonitorConnection, preferredFingerprint: String?
+        _ selection: InputSelection, allowed: Set<DisplayInput>, expected: MonitorConnection, preferredFingerprint: String?
     ) -> (result: SwitchResult, inventory: MonitorInventory) {
         var probe = transport.probe(preferredFingerprint: preferredFingerprint)
         for delay in [0.15, 0.35] {
@@ -84,9 +104,10 @@ struct MonitorController {
             probe = transport.probe(preferredFingerprint: preferredFingerprint)
         }
         guard case .connected(let initial) = probe.status,
-              let input = initial.input, initial.connection == expected, allowed.contains(target)
+              let input = initial.input, initial.connection == expected, selection.isAllowed(in: allowed)
         else { return (.blocked(probe.status), probe.inventory) }
 
+        let target = selection.target(after: input)
         if input == target { return (.alreadySelected(initial), probe.inventory) }
 
         // USB-C can be unavailable briefly during the display's input change.

@@ -111,6 +111,42 @@ final class MonitorPreferencesTests: XCTestCase {
         XCTAssertEqual(MonitorPreferences(defaults: defaults).leftClickAction, .showMenu)
     }
 
+    func testSavedToggleModeIsRestored() throws {
+        let (defaults, domain) = try testDefaults()
+        defer { defaults.removePersistentDomain(forName: domain) }
+        defaults.set("toggleInputs", forKey: "leftClickAction")
+
+        XCTAssertEqual(MonitorPreferences(defaults: defaults).leftClickAction, .toggleInputs)
+    }
+
+    func testTogglePairPersistsPerMonitorAndDoesNotReplaceTheMacInput() throws {
+        let (defaults, domain) = try testDefaults()
+        defer { defaults.removePersistentDomain(forName: domain) }
+        let first = DisplayIdentity(fingerprint: "first", serialNumber: 10)
+        let second = DisplayIdentity(fingerprint: "second", serialNumber: 20)
+        let preferences = MonitorPreferences(defaults: defaults)
+        let pair = InputTogglePair(first: .usbC, second: .displayPort)
+        preferences.assignMacInput(.hdmi1, for: first)
+        preferences.setToggleInputs(pair, for: first)
+        preferences.setToggleInputs(InputTogglePair(first: .hdmi2, second: nil), for: second)
+        preferences.leftClickAction = .toggleInputs
+
+        let reloaded = MonitorPreferences(defaults: defaults)
+        let configuration = reloaded.configuration(for: first)
+        XCTAssertEqual(reloaded.leftClickAction, .toggleInputs)
+        XCTAssertEqual(configuration.toggleInputs, pair)
+        XCTAssertEqual(configuration.selection(for: reloaded.leftClickAction),
+                       .alternate(first: .usbC, second: .displayPort))
+        XCTAssertEqual(configuration.selection(for: .selectMac), .fixed(.hdmi1))
+        XCTAssertNil(configuration.selection(for: .showMenu))
+        XCTAssertEqual(configuration.inputs(advertised: [], profile: nil), [.usbC, .displayPort, .hdmi1])
+        XCTAssertEqual(reloaded.configuration(for: second).toggleInputs, InputTogglePair(first: .hdmi2, second: nil))
+        XCTAssertNil(reloaded.configuration(for: second).selection(for: .toggleInputs))
+
+        reloaded.setToggleInputs(InputTogglePair(first: .usbC, second: .usbC), for: first)
+        XCTAssertEqual(MonitorPreferences(defaults: defaults).configuration(for: first).toggleInputs, pair)
+    }
+
     func testAnUnreadableInputDoesNotOverwriteTheLastVerifiedInput() throws {
         let (defaults, domain) = try testDefaults()
         defer { defaults.removePersistentDomain(forName: domain) }

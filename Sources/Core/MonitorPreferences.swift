@@ -3,6 +3,17 @@ import Foundation
 enum LeftClickAction: String {
     case selectMac
     case showMenu
+    case toggleInputs
+}
+
+struct InputTogglePair: Codable, Equatable {
+    var first: DisplayInput?
+    var second: DisplayInput?
+
+    var selection: InputSelection? {
+        guard let first, let second, first != second else { return nil }
+        return .alternate(first: first, second: second)
+    }
 }
 
 struct LastMonitorState: Codable, Equatable {
@@ -17,6 +28,15 @@ struct MonitorConfiguration: Codable {
     var observedInputs: Set<DisplayInput> = []
     var lastSeen: LastMonitorState?
     var hiddenInputs: Set<DisplayInput>?
+    var toggleInputs: InputTogglePair?
+
+    func selection(for action: LeftClickAction) -> InputSelection? {
+        switch action {
+        case .selectMac: macInput.map(InputSelection.fixed)
+        case .showMenu: nil
+        case .toggleInputs: toggleInputs?.selection
+        }
+    }
 
     func inputs(advertised: Set<DisplayInput>, profile: MonitorProfile?) -> Set<DisplayInput> {
         var inputs = observedInputs.union(advertised)
@@ -89,6 +109,16 @@ final class MonitorPreferences {
         var config = configuration(for: identity)
         config.macInput = input
         config.observedInputs.insert(input)
+        configurations[identity.fingerprint] = config
+        saveConfigurations()
+    }
+
+    func setToggleInputs(_ pair: InputTogglePair, for identity: DisplayIdentity) {
+        if let first = pair.first, first == pair.second { return }
+        var config = configuration(for: identity)
+        guard config.toggleInputs != pair else { return }
+        config.toggleInputs = pair
+        config.observedInputs.formUnion([pair.first, pair.second].compactMap { $0 })
         configurations[identity.fingerprint] = config
         saveConfigurations()
     }

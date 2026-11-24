@@ -25,10 +25,10 @@ actor MonitorWorker {
     }
 
     func select(
-        _ target: DisplayInput, allowed: Set<DisplayInput>, expected: MonitorConnection, preferredFingerprint: String?
+        _ selection: InputSelection, allowed: Set<DisplayInput>, expected: MonitorConnection, preferredFingerprint: String?
     ) -> (result: SwitchResult, inventory: MonitorInventory) {
         MonitorController(transport: transport).select(
-            target, allowed: allowed, expected: expected, preferredFingerprint: preferredFingerprint
+            selection, allowed: allowed, expected: expected, preferredFingerprint: preferredFingerprint
         )
     }
 }

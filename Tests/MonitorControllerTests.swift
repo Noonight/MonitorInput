@@ -19,6 +19,67 @@ final class MonitorControllerTests: XCTestCase {
         }
     }
 
+    func testAlternatingReadsTheActiveInputForBothDirections() {
+        let mac = makeReading(.usbC)
+        let windows = makeReading(.displayPort)
+        let monitor = StubTransport([.connected(mac), .connected(windows), .connected(windows), .connected(mac)])
+        let controller = MonitorController(transport: monitor, pause: { _ in })
+        let selection = InputSelection.alternate(first: .usbC, second: .displayPort)
+        let allowed: Set<DisplayInput> = [.usbC, .displayPort]
+
+        XCTAssertEqual(controller.select(
+            selection, allowed: allowed, expected: mac.connection, preferredFingerprint: nil
+        ).result, .selected(windows))
+        XCTAssertEqual(controller.select(
+            selection, allowed: allowed, expected: mac.connection, preferredFingerprint: nil
+        ).result, .selected(mac))
+        XCTAssertEqual(monitor.requests, [
+            .init(target: .displayPort, connection: mac.connection),
+            .init(target: .usbC, connection: mac.connection)
+        ])
+    }
+
+    func testAlternatingSelectsFirstConfiguredPortFromAnInputOutsideThePair() {
+        let mac = makeReading(.usbC)
+        let hdmi = makeReading(.hdmi1)
+        let monitor = StubTransport([.connected(mac), .connected(hdmi)])
+        let result = MonitorController(transport: monitor, pause: { _ in }).select(
+            .alternate(first: .hdmi1, second: .displayPort), allowed: [.hdmi1, .displayPort],
+            expected: mac.connection, preferredFingerprint: nil
+        )
+
+        XCTAssertEqual(result.result, .selected(hdmi))
+        XCTAssertEqual(monitor.requests, [.init(target: .hdmi1, connection: mac.connection)])
+    }
+
+    func testAlternatingDoesNotGuessWhenTheActiveInputIsUnreadable() {
+        let unknown = makeReading(nil)
+        let monitor = StubTransport([.connected(unknown)])
+        let result = MonitorController(transport: monitor, pause: { _ in }).select(
+            .alternate(first: .usbC, second: .displayPort), allowed: [.usbC, .displayPort],
+            expected: unknown.connection, preferredFingerprint: nil
+        )
+
+        XCTAssertEqual(result.result, .blocked(.connected(unknown)))
+        XCTAssertTrue(monitor.requests.isEmpty)
+    }
+
+    func testAlternatingRequiresTwoDistinctAllowedPorts() {
+        let mac = makeReading(.usbC)
+        let monitor = StubTransport([.connected(mac)])
+        let controller = MonitorController(transport: monitor, pause: { _ in })
+
+        XCTAssertEqual(controller.select(
+            .alternate(first: .usbC, second: .displayPort), allowed: [.displayPort],
+            expected: mac.connection, preferredFingerprint: nil
+        ).result, .blocked(.connected(mac)))
+        XCTAssertEqual(controller.select(
+            .alternate(first: .displayPort, second: .displayPort), allowed: [.usbC, .displayPort],
+            expected: mac.connection, preferredFingerprint: nil
+        ).result, .blocked(.connected(mac)))
+        XCTAssertTrue(monitor.requests.isEmpty)
+    }
+
     func testReadbackConfirmsAMacSwitchAfterATransientDisconnect() {
         let windows = makeReading(.displayPort)
         let mac = makeReading(.usbC)
@@ -61,7 +122,7 @@ final class MonitorControllerTests: XCTestCase {
         let reenumerated = makeReading(.displayPort, registryID: 78)
         let monitor = StubTransport([.connected(first), .connected(reenumerated)])
         let outcome = MonitorController(transport: monitor, pause: { _ in }).select(
-            .displayPort, allowed: [.displayPort], expected: first.connection, preferredFingerprint: nil
+            .fixed(.displayPort), allowed: [.displayPort], expected: first.connection, preferredFingerprint: nil
         )
         XCTAssertEqual(outcome.result, .selected(reenumerated))
         XCTAssertEqual(outcome.inventory.connections, [reenumerated.connection])
@@ -142,7 +203,8 @@ final class MonitorControllerTests: XCTestCase {
         preferredFingerprint: String? = nil
     ) -> SwitchResult {
         MonitorController(transport: transport, pause: { _ in }).select(
-            target, allowed: allowed, expected: expected ?? makeReading(nil).connection, preferredFingerprint: preferredFingerprint
+            .fixed(target), allowed: allowed, expected: expected ?? makeReading(nil).connection,
+            preferredFingerprint: preferredFingerprint
         ).result
     }
 

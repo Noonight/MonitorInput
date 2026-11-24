@@ -13,7 +13,7 @@ final class MonitorMenuBar: NSObject, NSApplicationDelegate {
 
     private var status: MonitorStatus?
     private var lastConnection: MonitorConnection?
-    private var switchingTo: DisplayInput?
+    private var pendingSelection: InputSelection?
     private var connections: [MonitorConnection] = []
     private var capabilities: (fingerprint: String, inputs: Set<DisplayInput>)?
     private var switchGeneration: UInt64 = 0
@@ -87,10 +87,9 @@ final class MonitorMenuBar: NSObject, NSApplicationDelegate {
         guard !isShowingMenu else { return }
         let event = NSApp.currentEvent
         if event?.type == .leftMouseUp, event?.modifierFlags.contains(.control) != true,
-           preferences.leftClickAction == .selectMac,
            let connection = switchableConnection,
-           let input = preferences.configuration(for: connection.identity).macInput {
-            select(input, expected: connection, showsFailure: true)
+           let selection = preferences.configuration(for: connection.identity).selection(for: preferences.leftClickAction) {
+            select(selection, expected: connection, showsFailure: true)
         } else {
             showMenu()
         }
@@ -101,7 +100,7 @@ final class MonitorMenuBar: NSObject, NSApplicationDelegate {
     }
 
     private func refresh() {
-        guard !isRefreshing, switchingTo == nil, !isShowingMenu else { return }
+        guard !isRefreshing, pendingSelection == nil, !isShowingMenu else { return }
         isRefreshing = true
         let generation = switchGeneration
         let preferred = preferences.preferredMonitor
@@ -120,25 +119,30 @@ final class MonitorMenuBar: NSObject, NSApplicationDelegate {
         }
     }
 
-    private func select(_ target: DisplayInput, expected: MonitorConnection, showsFailure: Bool) {
-        guard switchingTo == nil, switchableConnection == expected else { return }
+    private func select(_ selection: InputSelection, expected: MonitorConnection, showsFailure: Bool) {
+        guard pendingSelection == nil, switchableConnection == expected else { return }
         let allowed = availableInputs(for: expected.identity)
-        guard allowed.contains(target) else { return }
+        guard selection.isAllowed(in: allowed) else {
+            if showsFailure { showMenu() }
+            return
+        }
         let preferred = preferences.preferredMonitor
         alreadyOnMac.dismiss()
         switchGeneration &+= 1
-        switchingTo = target
+        pendingSelection = selection
         notice = nil
         renderStatusItem()
         Task {
             let (result, inventory) = await worker.select(
-                target, allowed: allowed, expected: expected, preferredFingerprint: preferred
+                selection, allowed: allowed, expected: expected, preferredFingerprint: preferred
             )
-            switchingTo = nil
+            pendingSelection = nil
 
             switch result {
-            case .selected:
-                log.info("Selected input \(target.rawValue, privacy: .public)")
+            case .selected(let reading):
+                if let input = reading.input {
+                    log.info("Selected input \(input.rawValue, privacy: .public)")
+                }
             case .alreadySelected:
                 break
             case .blocked(.connected(let reading)) where reading.input != nil:
@@ -147,13 +151,13 @@ final class MonitorMenuBar: NSObject, NSApplicationDelegate {
                 break
             case .unconfirmed:
                 notice = "Смена входа не подтверждена"
-                log.notice("Could not confirm input \(target.rawValue, privacy: .public)")
+                log.notice("Could not confirm input change")
             }
 
             apply(result.status, inventory: inventory)
             switch result {
-            case .alreadySelected:
-                if target == preferences.configuration(for: expected.identity).macInput,
+            case .alreadySelected(let reading):
+                if let input = reading.input, input == preferences.configuration(for: expected.identity).macInput,
                    !isShowingMenu, let button = item.button {
                     alreadyOnMac.show(below: button)
                 }
@@ -246,8 +250,11 @@ final class MonitorMenuBar: NSObject, NSApplicationDelegate {
     }
 
     private var summary: String {
-        if let switchingTo, let identity = selectedIdentity {
-            return "Переключение · \(inputTitle(switchingTo, on: identity))…"
+        if let pendingSelection {
+            if case .fixed(let input) = pendingSelection, let identity = selectedIdentity {
+                return "Переключение · \(inputTitle(input, on: identity))…"
+            }
+            return "Переключение входа…"
         }
         if let notice { return notice }
         if let reading, let input = reading.input {
@@ -260,7 +267,7 @@ final class MonitorMenuBar: NSObject, NSApplicationDelegate {
         if settingsWindow?.isVisible == true { updateSettings() }
         guard let button = item.button else { return }
         let symbol: String
-        if switchingTo != nil {
+        if pendingSelection != nil {
             symbol = "arrow.triangle.2.circlepath"
         } else if reading == nil && status != nil || notice != nil {
             symbol = "display.trianglebadge.exclamationmark"
@@ -317,7 +324,7 @@ final class MonitorMenuBar: NSObject, NSApplicationDelegate {
                 menu.addItem(sourceItem(input, on: identity, isMac: configuration.macInput == input))
             }
         }
-        if switchingTo != nil || notice != nil {
+        if pendingSelection != nil || notice != nil {
             menu.addItem(NSMenuItem.sectionHeader(title: summary))
         }
         menu.addItem(.separator())
@@ -337,7 +344,7 @@ final class MonitorMenuBar: NSObject, NSApplicationDelegate {
         let menuItem = command(title, #selector(sourceChosen(_:)), symbol: isMac ? "laptopcomputer" : "cable.connector")
         if title != port { menuItem.subtitle = port }
         menuItem.state = reading?.input == target ? .on : .off
-        if let connection = switchableConnection, connection.identity == identity, switchingTo == nil {
+        if let connection = switchableConnection, connection.identity == identity, pendingSelection == nil {
             menuItem.representedObject = SourceSelection(target: target, connection: connection)
         } else {
             menuItem.isEnabled = false
@@ -347,7 +354,7 @@ final class MonitorMenuBar: NSObject, NSApplicationDelegate {
 
     @objc private func sourceChosen(_ sender: NSMenuItem) {
         guard let selection = sender.representedObject as? SourceSelection else { return }
-        select(selection.target, expected: selection.connection, showsFailure: false)
+        select(.fixed(selection.target), expected: selection.connection, showsFailure: false)
     }
 
     @objc private func showSettings() {
@@ -393,8 +400,8 @@ final class MonitorMenuBar: NSObject, NSApplicationDelegate {
         state.preferredMonitor = preferences.preferredMonitor
         state.choices = monitorChoices
         state.connectionStatus = connectionStatus
-        state.isSwitching = switchingTo != nil
-        state.quickSwitch = preferences.leftClickAction == .selectMac
+        state.isSwitching = pendingSelection != nil
+        state.leftClickAction = preferences.leftClickAction
         state.mirrorsOtherInputs = preferences.mirrorsOtherInputs
         switch mirrorState {
         case .inactive: break
@@ -418,6 +425,7 @@ final class MonitorMenuBar: NSObject, NSApplicationDelegate {
                 identity: identity,
                 name: monitorName(identity),
                 macInput: configuration.macInput,
+                toggleInputs: configuration.toggleInputs ?? InputTogglePair(),
                 ports: ports,
                 lastSeen: previous?.observedAt,
                 lastSource: previous?.input.map { inputTitle($0, on: identity) }
@@ -452,7 +460,7 @@ final class MonitorMenuBar: NSObject, NSApplicationDelegate {
     private func applySetting(_ setting: MonitorSetting) {
         switch setting {
         case .monitor(let fingerprint):
-            guard switchingTo == nil, preferences.preferredMonitor != fingerprint else { return }
+            guard pendingSelection == nil, preferences.preferredMonitor != fingerprint else { return }
             let previous = selectedIdentity?.fingerprint
             preferences.preferredMonitor = fingerprint
             switchGeneration &+= 1
@@ -465,7 +473,7 @@ final class MonitorMenuBar: NSObject, NSApplicationDelegate {
             }
             refresh()
         case .macInput(let input, let identity):
-            guard switchingTo == nil else { return }
+            guard pendingSelection == nil else { return }
             preferences.assignMacInput(input, for: identity)
             notice = nil
             refresh()
@@ -473,8 +481,14 @@ final class MonitorMenuBar: NSObject, NSApplicationDelegate {
             preferences.renameInput(input, for: identity, to: name)
         case .visibility(let visible, let input, let identity):
             preferences.setInputVisibility(input, visible: visible, for: identity)
-        case .quickSwitch(let enabled):
-            preferences.leftClickAction = enabled ? .selectMac : .showMenu
+        case .leftClickAction(let action):
+            guard pendingSelection == nil else { return }
+            preferences.leftClickAction = action
+        case .toggleInputs(let pair, let identity):
+            guard pendingSelection == nil, selectedIdentity == identity else { return }
+            let available = availableInputs(for: identity)
+            guard [pair.first, pair.second].compactMap({ $0 }).allSatisfy(available.contains) else { return }
+            preferences.setToggleInputs(pair, for: identity)
         case .mirroring(let enabled):
             preferences.mirrorsOtherInputs = enabled
             if enabled {

@@ -6,6 +6,7 @@ import SwiftUI
 final class MonitorMenuBar: NSObject, NSApplicationDelegate {
     private let worker = MonitorWorker()
     private let preferences = MonitorPreferences()
+    private lazy var localization = AppLocalization(language: preferences.language)
     private let profiles = MonitorProfiles.bundled()
     private let automaticMirroring = AutomaticMirroring(desktop: QuartzDesktopMirroring())
     private let log = Logger(subsystem: "local.monitorinput.app", category: "Input")
@@ -17,7 +18,7 @@ final class MonitorMenuBar: NSObject, NSApplicationDelegate {
     private var connections: [MonitorConnection] = []
     private var capabilities: (fingerprint: String, inputs: Set<DisplayInput>)?
     private var switchGeneration: UInt64 = 0
-    private var notice: String?
+    private var noticeKey: String?
     private var mirrorState: DesktopMirrorState = .inactive
     private var isRefreshing = false
     private var isShowingMenu = false
@@ -56,9 +57,9 @@ final class MonitorMenuBar: NSObject, NSApplicationDelegate {
 
     private func installApplicationMenu() {
         let applicationMenu = NSMenu(title: "MonitorInput")
-        applicationMenu.addItem(command("Настройки…", #selector(showSettings), key: ",", symbol: "gearshape"))
+        applicationMenu.addItem(command(localization.text("Settings…"), #selector(showSettings), key: ",", symbol: "gearshape"))
         applicationMenu.addItem(.separator())
-        let quitItem = NSMenuItem(title: "Завершить MonitorInput", action: #selector(quit), keyEquivalent: "q")
+        let quitItem = NSMenuItem(title: localization.text("Quit MonitorInput"), action: #selector(quit), keyEquivalent: "q")
         quitItem.target = self
         applicationMenu.addItem(quitItem)
 
@@ -111,7 +112,7 @@ final class MonitorMenuBar: NSObject, NSApplicationDelegate {
                 refresh()
                 return
             }
-            if status != scan.status { notice = nil }
+            if status != scan.status { noticeKey = nil }
             if case .connected(let reading) = scan.status {
                 capabilities = (reading.connection.identity.fingerprint, scan.advertisedInputs)
             }
@@ -130,7 +131,7 @@ final class MonitorMenuBar: NSObject, NSApplicationDelegate {
         alreadyOnMac.dismiss()
         switchGeneration &+= 1
         pendingSelection = selection
-        notice = nil
+        noticeKey = nil
         renderStatusItem()
         Task {
             let (result, inventory) = await worker.select(
@@ -146,11 +147,11 @@ final class MonitorMenuBar: NSObject, NSApplicationDelegate {
             case .alreadySelected:
                 break
             case .blocked(.connected(let reading)) where reading.input != nil:
-                notice = "Монитор переподключён. Повторите выбор."
+                noticeKey = "The monitor reconnected. Choose the input again."
             case .blocked:
                 break
             case .unconfirmed:
-                notice = "Смена входа не подтверждена"
+                noticeKey = "Input change not confirmed"
                 log.notice("Could not confirm input change")
             }
 
@@ -159,7 +160,7 @@ final class MonitorMenuBar: NSObject, NSApplicationDelegate {
             case .alreadySelected(let reading):
                 if let input = reading.input, input == preferences.configuration(for: expected.identity).macInput,
                    !isShowingMenu, let button = item.button {
-                    alreadyOnMac.show(below: button)
+                    alreadyOnMac.show(localization.text("Already on Mac"), below: button)
                 }
             case .selected:
                 break
@@ -221,7 +222,9 @@ final class MonitorMenuBar: NSObject, NSApplicationDelegate {
     }
 
     private func monitorName(_ identity: DisplayIdentity) -> String {
-        profiles.profile(for: identity)?.name ?? identity.product?.name ?? "Монитор"
+        if let profile = profiles.profile(for: identity) { return profile.name }
+        guard let product = identity.product else { return localization.text("Monitor") }
+        return product.reportedName ?? localization.text("Monitor %@", product.vendorModelCode)
     }
 
     private func availableInputs(for identity: DisplayIdentity) -> Set<DisplayInput> {
@@ -231,32 +234,34 @@ final class MonitorMenuBar: NSObject, NSApplicationDelegate {
 
     private func portName(_ input: DisplayInput, on identity: DisplayIdentity) -> String {
         profiles.profile(for: identity)?.ports[input] ?? MonitorProfile.portName(for: input)
+            ?? localization.text("Input %@", input.hexCode)
     }
 
     private func inputTitle(_ input: DisplayInput, on identity: DisplayIdentity) -> String {
         let configuration = preferences.configuration(for: identity)
         if let alias = configuration.aliases[input.rawValue] { return alias }
-        return configuration.macInput == input ? "Этот Mac" : portName(input, on: identity)
+        return configuration.macInput == input ? localization.text("This Mac") : portName(input, on: identity)
     }
 
     private var connectionStatus: String {
         switch status {
-        case nil: "Проверка связи…"
-        case .disconnected: "Не подключён"
-        case .unavailable: "Связь недоступна"
-        case .ambiguous: "Нужно выбрать монитор"
-        case .connected(let reading): reading.input == nil ? "Подключён · Вход не определён" : "Подключён"
+        case nil: localization.text("Checking connection…")
+        case .disconnected: localization.text("Not connected")
+        case .unavailable: localization.text("Connection unavailable")
+        case .ambiguous: localization.text("Choose a monitor")
+        case .connected(let reading):
+            localization.text(reading.input == nil ? "Connected · Input unknown" : "Connected")
         }
     }
 
     private var summary: String {
         if let pendingSelection {
             if case .fixed(let input) = pendingSelection, let identity = selectedIdentity {
-                return "Переключение · \(inputTitle(input, on: identity))…"
+                return localization.text("Switching to %@…", inputTitle(input, on: identity))
             }
-            return "Переключение входа…"
+            return localization.text("Switching input…")
         }
-        if let notice { return notice }
+        if let noticeKey { return localization.text(noticeKey) }
         if let reading, let input = reading.input {
             return "\(connectionStatus) · \(inputTitle(input, on: reading.connection.identity))"
         }
@@ -269,17 +274,17 @@ final class MonitorMenuBar: NSObject, NSApplicationDelegate {
         let symbol: String
         if pendingSelection != nil {
             symbol = "arrow.triangle.2.circlepath"
-        } else if reading == nil && status != nil || notice != nil {
+        } else if reading == nil && status != nil || noticeKey != nil {
             symbol = "display.trianglebadge.exclamationmark"
         } else {
             symbol = "display"
         }
         button.image = icon(symbol) ?? icon("display")
-        let title = selectedIdentity.map(monitorName) ?? "Вход монитора"
+        let title = selectedIdentity.map(monitorName) ?? localization.text("Monitor Input")
         button.toolTip = "\(title) · \(summary)"
-        button.setAccessibilityLabel("Вход монитора")
+        button.setAccessibilityLabel(localization.text("Monitor Input"))
         button.setAccessibilityValue(summary)
-        button.setAccessibilityHelp("Control‑клик открывает меню источников.")
+        button.setAccessibilityHelp(localization.text("Control-click opens the input menu."))
     }
 
     private func showMenu() {
@@ -304,7 +309,8 @@ final class MonitorMenuBar: NSObject, NSApplicationDelegate {
         menu.minimumWidth = 235
 
         let identity = selectedIdentity
-        let header = NSMenuItem(title: identity.map(monitorName) ?? "Вход монитора", action: nil, keyEquivalent: "")
+        let title = identity.map(monitorName) ?? localization.text("Monitor Input")
+        let header = NSMenuItem(title: title, action: nil, keyEquivalent: "")
         if let identity, let input = reading?.input,
            !preferences.configuration(for: identity).isInputVisible(input) {
             header.subtitle = "\(connectionStatus) · \(inputTitle(input, on: identity))"
@@ -324,12 +330,12 @@ final class MonitorMenuBar: NSObject, NSApplicationDelegate {
                 menu.addItem(sourceItem(input, on: identity, isMac: configuration.macInput == input))
             }
         }
-        if pendingSelection != nil || notice != nil {
+        if pendingSelection != nil || noticeKey != nil {
             menu.addItem(NSMenuItem.sectionHeader(title: summary))
         }
         menu.addItem(.separator())
-        menu.addItem(command("Настройки…", #selector(showSettings), key: ",", symbol: "gearshape"))
-        menu.addItem(command("Выход", #selector(quit), key: "q", symbol: "power"))
+        menu.addItem(command(localization.text("Settings…"), #selector(showSettings), key: ",", symbol: "gearshape"))
+        menu.addItem(command(localization.text("Quit"), #selector(quit), key: "q", symbol: "power"))
         return menu
     }
 
@@ -374,7 +380,7 @@ final class MonitorMenuBar: NSObject, NSApplicationDelegate {
                 backing: .buffered,
                 defer: false
             )
-            window.title = "Настройки MonitorInput"
+            window.title = localization.text("MonitorInput Settings")
             window.tabbingMode = .disallowed
             window.collectionBehavior.formUnion([.fullScreenNone, .moveToActiveSpace])
             window.standardWindowButton(.miniaturizeButton)?.isHidden = true
@@ -397,6 +403,7 @@ final class MonitorMenuBar: NSObject, NSApplicationDelegate {
 
     private func updateSettings() {
         var state = MonitorSettingsState()
+        state.language = preferences.language
         state.preferredMonitor = preferences.preferredMonitor
         state.choices = monitorChoices
         state.connectionStatus = connectionStatus
@@ -405,9 +412,9 @@ final class MonitorMenuBar: NSObject, NSApplicationDelegate {
         state.mirrorsOtherInputs = preferences.mirrorsOtherInputs
         switch mirrorState {
         case .inactive: break
-        case .active: state.mirrorStatus = "Рабочий стол сейчас на экране MacBook."
-        case .unavailable: state.mirrorStatus = "Зеркалирование сейчас недоступно."
-        case .restoreFailed: state.mirrorStatus = "Раскладка восстановлена не полностью."
+        case .active: state.mirrorStatus = localization.text("The desktop is now on the MacBook display.")
+        case .unavailable: state.mirrorStatus = localization.text("Mirroring is currently unavailable.")
+        case .restoreFailed: state.mirrorStatus = localization.text("The display arrangement was only partially restored.")
         }
         if let identity = selectedIdentity {
             let configuration = preferences.configuration(for: identity)
@@ -440,7 +447,7 @@ final class MonitorMenuBar: NSObject, NSApplicationDelegate {
         var choices = grouped.values.compactMap { group -> MonitorSettingsState.Choice? in
             guard let identity = group.first?.identity else { return nil }
             let name = monitorName(identity)
-            let label = group.count > 1 ? "\(name) · одинаковый EDID" : name
+            let label = group.count > 1 ? localization.text("%@ · identical EDID", name) : name
             return MonitorSettingsState.Choice(id: identity.fingerprint, name: label, canSelect: group.count == 1)
         }
         let nameCounts = Dictionary(grouping: choices, by: \.name).mapValues(\.count)
@@ -451,14 +458,23 @@ final class MonitorMenuBar: NSObject, NSApplicationDelegate {
             )
         }
         if let preferred = preferences.preferredMonitor, !choices.contains(where: { $0.id == preferred }) {
-            let name = preferences.lastSeen.map { monitorName($0.identity) } ?? "Сохранённый монитор"
-            choices.append(MonitorSettingsState.Choice(id: preferred, name: "\(name) · отключён", canSelect: false))
+            let name = preferences.lastSeen.map { monitorName($0.identity) } ?? localization.text("Saved monitor")
+            choices.append(MonitorSettingsState.Choice(
+                id: preferred, name: localization.text("%@ · disconnected", name), canSelect: false
+            ))
         }
         return choices.sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
     }
 
     private func applySetting(_ setting: MonitorSetting) {
         switch setting {
+        case .language(let language):
+            guard preferences.language != language else { return }
+            preferences.language = language
+            localization = AppLocalization(language: language)
+            alreadyOnMac.dismiss()
+            installApplicationMenu()
+            settingsWindow?.title = localization.text("MonitorInput Settings")
         case .monitor(let fingerprint):
             guard pendingSelection == nil, preferences.preferredMonitor != fingerprint else { return }
             let previous = selectedIdentity?.fingerprint
@@ -467,7 +483,7 @@ final class MonitorMenuBar: NSObject, NSApplicationDelegate {
             status = nil
             lastConnection = nil
             capabilities = nil
-            notice = nil
+            noticeKey = nil
             if let fingerprint, fingerprint != previous {
                 mirrorState = automaticMirroring.update(nil, enabled: false) ?? .inactive
             }
@@ -475,7 +491,7 @@ final class MonitorMenuBar: NSObject, NSApplicationDelegate {
         case .macInput(let input, let identity):
             guard pendingSelection == nil else { return }
             preferences.assignMacInput(input, for: identity)
-            notice = nil
+            noticeKey = nil
             refresh()
         case .alias(let name, let input, let identity):
             preferences.renameInput(input, for: identity, to: name)

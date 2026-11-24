@@ -58,6 +58,19 @@ final class DisplayProtocolTests: XCTestCase {
         XCTAssertEqual(identity.product, DisplayProduct(vendorID: 0x10AC, modelID: 0x1234, name: "U2720Q"))
     }
 
+    func testOnlyReportedNamesAreUsedFromCurrentAndLegacyEDIDRecords() throws {
+        let identity = try XCTUnwrap(
+            DisplayProtocol.identity(in: makeEDID(vendor: 0x10AC, product: 0x1234, name: ""))
+        )
+        let unnamed = try XCTUnwrap(identity.product)
+        let legacy = DisplayProduct(vendorID: 0x10AC, modelID: 0x1234, name: "Монитор 10AC:1234")
+        let named = DisplayProduct(vendorID: 0x10AC, modelID: 0x1234, name: "U2720Q")
+        XCTAssertNil(unnamed.reportedName)
+        XCTAssertNil(legacy.reportedName)
+        XCTAssertEqual(legacy.vendorModelCode, "10AC:1234")
+        XCTAssertEqual(named.reportedName, "U2720Q")
+    }
+
     func testCapabilityPacketsValidateTheChecksumAndTheRequestedOffset() {
         XCTAssertEqual(DisplayProtocol.capabilitiesRequest(offset: 0x20), [0x83, 0xF3, 0x00, 0x20, 0x6F])
         let frame: [UInt8] = [0x6E, 0x86, 0xE3, 0, 0x20, 0x61, 0x62, 0x63, 0x1B]

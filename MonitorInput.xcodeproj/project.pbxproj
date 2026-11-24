@@ -7,6 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A80100000000000000000002 /* AppLocalization.swift in Sources */ = {isa = PBXBuildFile; fileRef = A80100000000000000000001 /* AppLocalization.swift */; };
+		A80100000000000000000003 /* AppLocalization.swift in Sources */ = {isa = PBXBuildFile; fileRef = A80100000000000000000001 /* AppLocalization.swift */; };
+		A80100000000000000000005 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = A80100000000000000000004 /* Localizable.xcstrings */; };
+		A80100000000000000000006 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = A80100000000000000000004 /* Localizable.xcstrings */; };
 		0E40BA4A9AD1CB4F8BE6CDEF /* MonitorWorker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D591B556BAB6FBB43F186C8 /* MonitorWorker.swift */; };
 		139305610B0332BCD8C9E695 /* AutomaticMirroringTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2371367808ADE838EBDDE175 /* AutomaticMirroringTests.swift */; };
 		17E6E1E511F4EF2A9228B5EC /* MonitorController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C29CA3BB82D1D4ED81885826 /* MonitorController.swift */; };
@@ -35,6 +39,8 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		A80100000000000000000001 /* AppLocalization.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLocalization.swift; sourceTree = "<group>"; };
+		A80100000000000000000004 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		1CA1ABCCBDBD69322AF210E7 /* DisplayProtocol.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DisplayProtocol.swift; sourceTree = "<group>"; };
 		2371367808ADE838EBDDE175 /* AutomaticMirroringTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AutomaticMirroringTests.swift; sourceTree = "<group>"; };
 		23D05EC71EE10F81CE8B2BE7 /* MonitorControllerTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MonitorControllerTests.swift; sourceTree = "<group>"; };
@@ -146,6 +152,7 @@
 			children = (
 				D0DB3731F2EB9FA07D187508 /* MonitorProfiles.json */,
 				AC3743836BB14131BE027EBC /* AppIcon.icns */,
+				A80100000000000000000004 /* Localizable.xcstrings */,
 			);
 			name = Resources;
 			path = Resources;
@@ -168,6 +175,7 @@
 				1CA1ABCCBDBD69322AF210E7 /* DisplayProtocol.swift */,
 				C29CA3BB82D1D4ED81885826 /* MonitorController.swift */,
 				75B654A57CDA0505DA40BB07 /* MonitorPreferences.swift */,
+				A80100000000000000000001 /* AppLocalization.swift */,
 				445F5104F8E332930142B831 /* AutomaticMirroring.swift */,
 				3BF5103EB7D4F686A2AACC9C /* MonitorProfiles.swift */,
 			);
@@ -239,6 +247,7 @@
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				en,
+				ru,
 				Base,
 			);
 			mainGroup = 6F8C5938202E47B3F1AFED7D;
@@ -257,6 +266,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A80100000000000000000006 /* Localizable.xcstrings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -266,6 +276,7 @@
 			files = (
 				6D09D17EF8179D4F909B6D31 /* MonitorProfiles.json in Resources */,
 				F9B156A7673C46CB94C14A17 /* AppIcon.icns in Resources */,
+				A80100000000000000000005 /* Localizable.xcstrings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -279,6 +290,7 @@
 				678A6AC2BEED91A4A06C83B9 /* DisplayProtocol.swift in Sources */,
 				22111DE4E007DF2265EFA6D6 /* MonitorController.swift in Sources */,
 				8D638CA5CAC02612398B9160 /* MonitorPreferences.swift in Sources */,
+				A80100000000000000000002 /* AppLocalization.swift in Sources */,
 				EB4CBB6A590012A6F75C3E8B /* MonitorInputApp.swift in Sources */,
 				E7B5D9DAA9617229EDCDDC72 /* MonitorMenuBar.swift in Sources */,
 				F34F2ECA1E9E4E7CAF746DB1 /* MonitorSettings.swift in Sources */,
@@ -298,6 +310,7 @@
 				CBB7160F5DC22E759BC75F73 /* DisplayProtocol.swift in Sources */,
 				17E6E1E511F4EF2A9228B5EC /* MonitorController.swift in Sources */,
 				E25CAD03CE1F1530F221285F /* MonitorPreferences.swift in Sources */,
+				A80100000000000000000003 /* AppLocalization.swift in Sources */,
 				B27132A3DAD80F81971284AE /* DisplayProtocolTests.swift in Sources */,
 				CEE6888104790148DDF1185A /* MonitorControllerTests.swift in Sources */,
 				6D06E7B36F82C80C76859A60 /* MonitorPreferencesTests.swift in Sources */,

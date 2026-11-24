@@ -2,15 +2,13 @@ import AppKit
 
 @MainActor
 final class AlreadyOnMacToast {
-    private static let message = "Уже на Mac"
     private var panel: ToastPanel?
     private var dismissal: Task<Void, Never>?
 
-    func show(below anchor: NSView) {
+    func show(_ message: String, below anchor: NSView) {
         guard let window = anchor.window, let screen = window.screen else { return }
-        dismissal?.cancel()
-
-        let panel = panel ?? makePanel()
+        dismiss()
+        let panel = makePanel(message: message)
         self.panel = panel
         let anchorFrame = window.convertToScreen(anchor.convert(anchor.bounds, to: nil))
         let available = screen.visibleFrame.insetBy(dx: 6, dy: 6)
@@ -24,7 +22,7 @@ final class AlreadyOnMacToast {
         NSAccessibility.post(
             element: anchor,
             notification: .announcementRequested,
-            userInfo: [.announcement: Self.message, .priority: NSAccessibilityPriorityLevel.medium.rawValue]
+            userInfo: [.announcement: message, .priority: NSAccessibilityPriorityLevel.medium.rawValue]
         )
 
         dismissal = Task { [weak self] in
@@ -41,10 +39,11 @@ final class AlreadyOnMacToast {
         dismissal?.cancel()
         dismissal = nil
         panel?.orderOut(nil)
+        panel = nil
     }
 
-    private func makePanel() -> ToastPanel {
-        let label = NSTextField(labelWithString: Self.message)
+    private func makePanel(message: String) -> ToastPanel {
+        let label = NSTextField(labelWithString: message)
         label.font = .systemFont(ofSize: 13, weight: .medium)
         let symbol = NSImageView()
         symbol.image = NSImage(systemSymbolName: "checkmark.circle.fill", accessibilityDescription: nil)

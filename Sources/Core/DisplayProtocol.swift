@@ -49,6 +49,16 @@ struct DisplayProduct: Codable, Equatable, Sendable {
     let vendorID: UInt32
     let modelID: UInt32
     let name: String
+
+    var vendorModelCode: String {
+        String(format: "%04X:%04X", vendorID, modelID)
+    }
+
+    var reportedName: String? {
+        // Older cached records use this fallback when the EDID has no model name.
+        guard !name.isEmpty, name != "Монитор \(vendorModelCode)" else { return nil }
+        return name
+    }
 }
 
 struct DisplayIdentity: Codable, Equatable, Sendable {
@@ -132,7 +142,7 @@ enum DisplayProtocol {
         guard isValidBaseEDID(edid), edid[18] == 1 else { return nil }
         let vendor = (UInt32(edid[8]) << 8) | UInt32(edid[9])
         let model = UInt32(edid[10]) | (UInt32(edid[11]) << 8)
-        let name = modelName(in: edid) ?? String(format: "Монитор %04X:%04X", vendor, model)
+        let name = modelName(in: edid) ?? ""
         let serial = UInt32(edid[12]) | (UInt32(edid[13]) << 8)
             | (UInt32(edid[14]) << 16) | (UInt32(edid[15]) << 24)
         let fingerprint = SHA256.hash(data: Data(edid)).map { String(format: "%02x", $0) }.joined()

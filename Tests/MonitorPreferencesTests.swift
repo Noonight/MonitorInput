@@ -2,6 +2,43 @@ import Foundation
 import XCTest
 
 final class MonitorPreferencesTests: XCTestCase {
+    func testEnglishAndRussianTranslationsAreBundled() {
+        let bundle = Bundle(for: MonitorPreferencesTests.self)
+        XCTAssertTrue(Set(["en", "ru"]).isSubset(of: Set(bundle.localizations)), "\(bundle.localizations)")
+    }
+
+    func testAppLanguageDefaultsToSystemAndPersistsAnOverride() throws {
+        let (defaults, domain) = try testDefaults()
+        defer { defaults.removePersistentDomain(forName: domain) }
+        let preferences = MonitorPreferences(defaults: defaults)
+        XCTAssertEqual(preferences.language, .system)
+
+        preferences.language = .russian
+        XCTAssertEqual(MonitorPreferences(defaults: defaults).language, .russian)
+        preferences.language = .english
+        XCTAssertEqual(MonitorPreferences(defaults: defaults).language, .english)
+        preferences.language = .system
+        XCTAssertEqual(MonitorPreferences(defaults: defaults).language, .system)
+    }
+
+    func testLanguageOverrideSelectsTranslationsAndFormatsArguments() {
+        let bundle = Bundle(for: MonitorPreferencesTests.self)
+        let russian = AppLocalization(language: .russian, bundle: bundle)
+        let english = AppLocalization(language: .english, bundle: bundle)
+
+        XCTAssertEqual(russian.text("MonitorInput Settings"), "Настройки MonitorInput")
+        XCTAssertEqual(english.text("MonitorInput Settings"), "MonitorInput Settings")
+        XCTAssertEqual(russian.text("Input %@", "0x1B"), "Вход 0x1B")
+        XCTAssertEqual(english.text("Input %@", "0x1B"), "Input 0x1B")
+    }
+
+    func testSystemLanguageFollowsBundleLocalization() {
+        let bundle = Bundle(for: MonitorPreferencesTests.self)
+        let system = AppLocalization(language: .system, bundle: bundle)
+        let expected = bundle.preferredLocalizations.first == "ru" ? "Настройки…" : "Settings…"
+        XCTAssertEqual(system.text("Settings…"), expected)
+    }
+
     func testCustomNamesAndMacInputAreStoredPerDisplay() throws {
         let (defaults, domain) = try testDefaults()
         defer { defaults.removePersistentDomain(forName: domain) }

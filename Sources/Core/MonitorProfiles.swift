@@ -10,7 +10,7 @@ struct MonitorProfile {
         product.vendorID == vendorID && product.modelID == modelID
     }
 
-    static func portName(for input: DisplayInput) -> String {
+    static func portName(for input: DisplayInput) -> String? {
         switch input.rawValue {
         case 0x01: "VGA"
         case 0x03: "DVI 1"
@@ -19,7 +19,7 @@ struct MonitorProfile {
         case 0x10: "DisplayPort 2"
         case 0x11: "HDMI 1"
         case 0x12: "HDMI 2"
-        default: "Вход \(input.hexCode)"
+        default: nil
         }
     }
 }

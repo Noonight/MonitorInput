@@ -53,6 +53,7 @@ struct MonitorConfiguration: Codable {
 final class MonitorPreferences {
     private let defaults: UserDefaults
     private static let leftClickKey = "leftClickAction"
+    private static let languageKey = "appLanguage"
     private static let mirrorKey = "mirrorsOtherInputs"
     private static let lastSeenKey = "lastMonitorState"
     private static let monitorKey = "monitorConfigurations"
@@ -79,6 +80,11 @@ final class MonitorPreferences {
     var leftClickAction: LeftClickAction {
         get { defaults.string(forKey: Self.leftClickKey).flatMap(LeftClickAction.init(rawValue:)) ?? .selectMac }
         set { defaults.set(newValue.rawValue, forKey: Self.leftClickKey) }
+    }
+
+    var language: AppLanguage {
+        get { defaults.string(forKey: Self.languageKey).flatMap(AppLanguage.init(rawValue:)) ?? .system }
+        set { defaults.set(newValue.rawValue, forKey: Self.languageKey) }
     }
 
     var mirrorsOtherInputs: Bool {

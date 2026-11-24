@@ -31,14 +31,16 @@ struct MonitorSettingsState: Equatable {
     var preferredMonitor: String?
     var choices: [Choice] = []
     var device: Device?
-    var connectionStatus = "Проверка связи…"
+    var connectionStatus = ""
     var isSwitching = false
+    var language: AppLanguage = .system
     var leftClickAction: LeftClickAction = .selectMac
     var mirrorsOtherInputs = false
     var mirrorStatus: String?
 }
 
 enum MonitorSetting {
+    case language(AppLanguage)
     case monitor(String?)
     case macInput(DisplayInput, DisplayIdentity)
     case alias(String, DisplayInput, DisplayIdentity)
@@ -83,7 +85,7 @@ final class MonitorSettingsModel: ObservableObject {
                 try loginItem.unregister()
             }
         } catch {
-            loginError = "Не удалось изменить автозапуск. \(error.localizedDescription)"
+            loginError = error.localizedDescription
         }
         refreshLoginStatus()
     }
@@ -94,26 +96,28 @@ struct MonitorSettingsView: View {
     @State private var showsDetails = false
 
     var body: some View {
+        let localization = AppLocalization(language: model.state.language)
         TabView {
-            inputs
-                .tabItem { Label("Входы", systemImage: "display") }
-            general
-                .tabItem { Label("Общие", systemImage: "gearshape") }
+            inputs(localization)
+                .tabItem { Label(localization.text("Inputs"), systemImage: "display") }
+            general(localization)
+                .tabItem { Label(localization.text("General"), systemImage: "gearshape") }
         }
+        .environment(\.locale, localization.locale)
         .onAppear { model.refreshLoginStatus() }
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
             model.refreshLoginStatus()
         }
     }
 
-    private var inputs: some View {
+    private func inputs(_ localization: AppLocalization) -> some View {
         Form {
-            Section("Монитор") {
-                Picker("Выбор монитора", selection: Binding(
+            Section(localization.text("Monitor")) {
+                Picker(localization.text("Select Monitor"), selection: Binding(
                     get: { model.state.preferredMonitor },
                     set: { model.apply(.monitor($0)) }
                 )) {
-                    Text("Автоматически").tag(String?.none)
+                    Text(localization.text("Automatic")).tag(String?.none)
                     ForEach(model.state.choices) { choice in
                         Text(choice.name).tag(Optional(choice.id)).disabled(!choice.canSelect)
                     }
@@ -122,15 +126,15 @@ struct MonitorSettingsView: View {
                 .background(SettingsScroller().allowsHitTesting(false))
 
                 let detectedName = model.state.preferredMonitor == nil ? model.state.device?.name : nil
-                LabeledContent(detectedName ?? "Состояние", value: model.state.connectionStatus)
+                LabeledContent(detectedName ?? localization.text("Status"), value: model.state.connectionStatus)
 
                 if let device = model.state.device, !device.ports.isEmpty {
-                    Picker("Вход Mac", selection: Binding(
+                    Picker(localization.text("Mac Input"), selection: Binding(
                         get: { device.macInput },
                         set: { if let input = $0 { model.apply(.macInput(input, device.identity)) } }
                     )) {
                         if device.macInput == nil {
-                            Text("Выберите порт").tag(DisplayInput?.none)
+                            Text(localization.text("Choose a port")).tag(DisplayInput?.none)
                         }
                         ForEach(device.ports) { port in
                             Text(port.name).tag(Optional(port.id))
@@ -142,10 +146,11 @@ struct MonitorSettingsView: View {
 
             if let device = model.state.device {
                 if !device.ports.isEmpty {
-                    Section("Названия и видимость входов") {
+                    Section(localization.text("Input Names and Visibility")) {
                         ForEach(device.ports) { port in
                             MonitorPortRow(
                                 port: port,
+                                localization: localization,
                                 rename: { model.apply(.alias($0, port.id, device.identity)) },
                                 setVisibility: { model.apply(.visibility($0, port.id, device.identity)) }
                             )
@@ -155,19 +160,19 @@ struct MonitorSettingsView: View {
                 }
 
                 Section {
-                    DisclosureGroup("Сведения о мониторе", isExpanded: $showsDetails) {
+                    DisclosureGroup(localization.text("Monitor Details"), isExpanded: $showsDetails) {
                         if let lastSeen = device.lastSeen {
-                            LabeledContent("Последнее подключение") {
+                            LabeledContent(localization.text("Last Connected")) {
                                 Text(lastSeen, format: .dateTime.day().month().hour().minute())
                             }
                         }
                         if let lastSource = device.lastSource {
-                            LabeledContent("Последний вход", value: lastSource)
+                            LabeledContent(localization.text("Last Input"), value: lastSource)
                         }
                         if let serial = device.identity.serialNumber {
-                            LabeledContent("Серийный номер EDID", value: String(format: "%08X", serial))
+                            LabeledContent(localization.text("EDID Serial Number"), value: String(format: "%08X", serial))
                         }
-                        LabeledContent("ID EDID") {
+                        LabeledContent(localization.text("EDID ID")) {
                             HStack(spacing: 8) {
                                 Text(device.identity.fingerprint)
                                     .font(.system(.caption, design: .monospaced))
@@ -180,8 +185,8 @@ struct MonitorSettingsView: View {
                                 } label: {
                                     Image(systemName: "doc.on.doc")
                                 }
-                                .accessibilityLabel("Скопировать ID EDID")
-                                .help("Скопировать ID EDID")
+                                .accessibilityLabel(localization.text("Copy EDID ID"))
+                                .help(localization.text("Copy EDID ID"))
                             }
                         }
                     }
@@ -191,71 +196,87 @@ struct MonitorSettingsView: View {
         .formStyle(.grouped)
     }
 
-    private var general: some View {
+    private func general(_ localization: AppLocalization) -> some View {
         Form {
-            Section("Запуск") {
-                Toggle("Запускать при входе в macOS", isOn: Binding(
+            Section {
+                Picker(localization.text("Language"), selection: Binding(
+                    get: { model.state.language },
+                    set: { model.apply(.language($0)) }
+                )) {
+                    Text(localization.text("System Default")).tag(AppLanguage.system)
+                    Text(verbatim: "Русский").tag(AppLanguage.russian)
+                    Text(verbatim: "English").tag(AppLanguage.english)
+                }
+                .pickerStyle(.menu)
+                .background(SettingsScroller().allowsHitTesting(false))
+            }
+
+            Section(localization.text("Startup")) {
+                Toggle(localization.text("Launch at login"), isOn: Binding(
                     get: { model.startsAtLogin },
                     set: { model.setStartsAtLogin($0) }
                 ))
-                .background(SettingsScroller().allowsHitTesting(false))
                 if model.loginStatus == .requiresApproval {
-                    LabeledContent("Требуется подтверждение") {
-                        Button("Открыть настройки macOS…") { SMAppService.openSystemSettingsLoginItems() }
+                    LabeledContent(localization.text("Approval required")) {
+                        Button(localization.text("Open macOS Settings…")) { SMAppService.openSystemSettingsLoginItems() }
                     }
                 }
                 if let error = model.loginError {
-                    Text(error).foregroundStyle(.secondary)
+                    Text(localization.text("Could not change launch at login. %@", error)).foregroundStyle(.secondary)
                 }
             }
 
-            Section("Строка меню") {
-                Picker("Левый клик", selection: Binding(
+            Section(localization.text("Menu Bar")) {
+                Picker(localization.text("Left Click"), selection: Binding(
                     get: { model.state.leftClickAction },
                     set: { model.apply(.leftClickAction($0)) }
                 )) {
-                    Text("Открыть меню").tag(LeftClickAction.showMenu)
-                    Text("Переключить на Mac").tag(LeftClickAction.selectMac)
-                    Text("Чередовать два входа").tag(LeftClickAction.toggleInputs)
+                    Text(localization.text("Open menu")).tag(LeftClickAction.showMenu)
+                    Text(localization.text("Switch to Mac")).tag(LeftClickAction.selectMac)
+                    Text(localization.text("Toggle between two inputs")).tag(LeftClickAction.toggleInputs)
                 }
                 .pickerStyle(.menu)
                 .disabled(model.state.isSwitching)
 
                 if model.state.leftClickAction == .toggleInputs {
                     if let device = model.state.device, device.ports.count >= 2 {
-                        LabeledContent("Монитор", value: device.name)
+                        LabeledContent(localization.text("Monitor"), value: device.name)
                         toggleInputPicker(
-                            "Первый вход", selection: \.first, excluding: device.toggleInputs.second, on: device
+                            localization.text("First Input"), selection: \.first,
+                            excluding: device.toggleInputs.second, on: device, localization: localization
                         )
                         toggleInputPicker(
-                            "Второй вход", selection: \.second, excluding: device.toggleInputs.first, on: device
+                            localization.text("Second Input"), selection: \.second,
+                            excluding: device.toggleInputs.first, on: device, localization: localization
                         )
-                        Text(device.toggleInputs.selection == nil
-                            ? "Выберите два входа. Пока пара не задана, левый клик открывает меню."
-                            : "Если активен вход вне пары, левый клик выберет первый.")
+                        Text(localization.text(device.toggleInputs.selection == nil
+                            ? "Choose two inputs. Until both are set, left-click opens the menu."
+                            : "If another input is active, left-click selects the first input."))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     } else {
-                        Text("Выберите монитор с двумя известными входами на вкладке «Входы».")
+                        Text(localization.text("Choose a monitor with two known inputs in the Inputs tab."))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
                 }
             }
 
-            Section("Рабочий стол") {
+            Section(localization.text("Desktop")) {
                 Toggle(isOn: Binding(
                     get: { model.state.mirrorsOtherInputs },
                     set: { model.apply(.mirroring($0)) }
                 )) {
                     VStack(alignment: .leading, spacing: 3) {
-                        Text("Зеркалировать при другом входе")
-                        Text(model.state.mirrorStatus ?? "Показывать рабочий стол на экране MacBook, пока монитор занят другим источником.")
+                        Text(localization.text("Mirror when another input is active"))
+                        Text(model.state.mirrorStatus ?? localization.text(
+                            "Show the desktop on the MacBook display while the monitor shows another source."
+                        ))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
                 }
-                .accessibilityLabel("Зеркалировать при другом входе")
+                .accessibilityLabel(localization.text("Mirror when another input is active"))
             }
         }
         .formStyle(.grouped)
@@ -264,7 +285,7 @@ struct MonitorSettingsView: View {
 
     private func toggleInputPicker(
         _ title: String, selection: WritableKeyPath<InputTogglePair, DisplayInput?>,
-        excluding other: DisplayInput?, on device: MonitorSettingsState.Device
+        excluding other: DisplayInput?, on device: MonitorSettingsState.Device, localization: AppLocalization
     ) -> some View {
         Picker(title, selection: Binding(
             get: { device.toggleInputs[keyPath: selection] },
@@ -275,9 +296,9 @@ struct MonitorSettingsView: View {
                 model.apply(.toggleInputs(pair, device.identity))
             }
         )) {
-            Text("Не выбран").tag(DisplayInput?.none)
+            Text(localization.text("Not selected")).tag(DisplayInput?.none)
             ForEach(device.ports.filter { $0.id != other }) { port in
-                let alias = port.alias.isEmpty && port.id == device.macInput ? "Этот Mac" : port.alias
+                let alias = port.alias.isEmpty && port.id == device.macInput ? localization.text("This Mac") : port.alias
                 Text(alias.isEmpty || alias == port.name ? port.name : "\(alias) · \(port.name)")
                     .tag(Optional(port.id))
             }
@@ -314,13 +335,18 @@ private struct SettingsScroller: NSViewRepresentable {
 
 private struct MonitorPortRow: View {
     let port: MonitorSettingsState.Port
+    let localization: AppLocalization
     let rename: (String) -> Void
     let setVisibility: (Bool) -> Void
     @State private var draft: String
     @FocusState private var isEditingName: Bool
 
-    init(port: MonitorSettingsState.Port, rename: @escaping (String) -> Void, setVisibility: @escaping (Bool) -> Void) {
+    init(
+        port: MonitorSettingsState.Port, localization: AppLocalization,
+        rename: @escaping (String) -> Void, setVisibility: @escaping (Bool) -> Void
+    ) {
         self.port = port
+        self.localization = localization
         self.rename = rename
         self.setVisibility = setVisibility
         _draft = State(initialValue: port.alias)
@@ -331,14 +357,17 @@ private struct MonitorPortRow: View {
             VStack(alignment: .leading, spacing: 3) {
                 Text(port.name)
                 if port.isSelected {
-                    Label("Выбран", systemImage: "checkmark.circle.fill")
+                    Label(localization.text("Selected"), systemImage: "checkmark.circle.fill")
                         .font(.caption)
                         .foregroundStyle(Color.accentColor)
                 }
             }
             .frame(width: 118, alignment: .leading)
 
-            TextField("Название входа \(port.name)", text: $draft, prompt: Text("Добавить название"))
+            TextField(
+                localization.text("%@ input name", port.name), text: $draft,
+                prompt: Text(localization.text("Add a name"))
+            )
                 .labelsHidden()
                 .textFieldStyle(.roundedBorder)
                 .focused($isEditingName)
@@ -348,9 +377,9 @@ private struct MonitorPortRow: View {
                 }
                 .onSubmit { isEditingName = false }
 
-            Toggle("В меню", isOn: Binding(get: { port.isVisible }, set: { setVisibility($0) }))
+            Toggle(localization.text("In menu"), isOn: Binding(get: { port.isVisible }, set: { setVisibility($0) }))
                 .toggleStyle(.checkbox)
-                .accessibilityLabel("Показывать \(port.name) в меню")
+                .accessibilityLabel(localization.text("Show %@ in the menu", port.name))
                 .fixedSize()
         }
     }

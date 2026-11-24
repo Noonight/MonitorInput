@@ -562,6 +562,23 @@
         }
       }
     },
+    "Left click · %@.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Left click · %@."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Левый клик · %@."
+          }
+        }
+      }
+    },
     "Left Click": {
       "extractionState": "manual",
       "localizations": {

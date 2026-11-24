@@ -21,4 +21,12 @@ struct AppLocalization {
         let translation = bundle.localizedString(forKey: english, value: english, table: nil)
         return arguments.isEmpty ? translation : String(format: translation, locale: locale, arguments: arguments)
     }
+
+    func title(for action: LeftClickAction) -> String {
+        switch action {
+        case .showMenu: text("Open menu")
+        case .selectMac: text("Switch to Mac")
+        case .toggleInputs: text("Toggle between two inputs")
+        }
+    }
 }

@@ -11,6 +11,11 @@ final class MonitorMenuBar: NSObject, NSApplicationDelegate {
     private let automaticMirroring = AutomaticMirroring(desktop: QuartzDesktopMirroring())
     private let log = Logger(subsystem: "local.monitorinput.app", category: "Input")
     private let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
+    private lazy var displayIcon = icon("display")
+    private lazy var warningIcon = icon("display.trianglebadge.exclamationmark")
+    private lazy var badgedIcons = Dictionary(uniqueKeysWithValues: StatusBadge.allCases.compactMap { badge in
+        badgedDisplayIcon(badge).map { (badge, $0) }
+    })
 
     private var status: MonitorStatus?
     private var lastConnection: MonitorConnection?
@@ -271,20 +276,15 @@ final class MonitorMenuBar: NSObject, NSApplicationDelegate {
     private func renderStatusItem() {
         if settingsWindow?.isVisible == true { updateSettings() }
         guard let button = item.button else { return }
-        let symbol: String
-        if pendingSelection != nil {
-            symbol = "arrow.triangle.2.circlepath"
-        } else if reading == nil && status != nil || noticeKey != nil {
-            symbol = "display.trianglebadge.exclamationmark"
-        } else {
-            symbol = "display"
-        }
-        button.image = icon(symbol) ?? icon("display")
+        button.image = statusIcon
         let title = selectedIdentity.map(monitorName) ?? localization.text("Monitor Input")
         button.toolTip = "\(title) · \(summary)"
         button.setAccessibilityLabel(localization.text("Monitor Input"))
         button.setAccessibilityValue(summary)
-        button.setAccessibilityHelp(localization.text("Control-click opens the input menu."))
+        button.setAccessibilityHelp(
+            localization.text("Left click · %@.", localization.title(for: preferences.leftClickAction))
+                + " " + localization.text("Control-click opens the input menu.")
+        )
     }
 
     private func showMenu() {
@@ -526,6 +526,53 @@ final class MonitorMenuBar: NSObject, NSApplicationDelegate {
     private func icon(_ name: String) -> NSImage? {
         let image = NSImage(systemSymbolName: name, accessibilityDescription: nil)
         image?.isTemplate = true
+        return image
+    }
+
+    private enum StatusBadge: String, CaseIterable {
+        case mac = "apple.logo"
+        case alternate = "arrow.left.arrow.right"
+        case switching = "arrow.triangle.2.circlepath"
+    }
+
+    private var statusIcon: NSImage? {
+        if pendingSelection != nil { return badgedIcons[.switching] ?? displayIcon }
+        if reading == nil && status != nil || noticeKey != nil { return warningIcon ?? displayIcon }
+        switch preferences.leftClickAction {
+        case .showMenu: return displayIcon
+        case .selectMac: return badgedIcons[.mac] ?? displayIcon
+        case .toggleInputs: return badgedIcons[.alternate] ?? displayIcon
+        }
+    }
+
+    private func badgedDisplayIcon(_ badge: StatusBadge) -> NSImage? {
+        let configuration = NSImage.SymbolConfiguration(pointSize: 8, weight: .semibold)
+        guard let displayIcon, let badgeIcon = icon(badge.rawValue)?.withSymbolConfiguration(configuration)
+        else { return nil }
+
+        let size = NSSize(width: displayIcon.size.width + 2, height: displayIcon.size.height + 1)
+        let image = NSImage(size: size, flipped: false) { bounds in
+            let monitor = NSRect(
+                origin: NSPoint(x: bounds.minX, y: bounds.maxY - displayIcon.size.height),
+                size: displayIcon.size
+            )
+            let corner = NSRect(
+                origin: NSPoint(x: bounds.maxX - badgeIcon.size.width, y: bounds.minY),
+                size: badgeIcon.size
+            )
+            displayIcon.draw(in: monitor)
+            if let context = NSGraphicsContext.current?.cgContext {
+                let gap = corner.insetBy(dx: -1, dy: -1)
+                context.saveGState()
+                context.setBlendMode(.clear)
+                context.addPath(CGPath(roundedRect: gap, cornerWidth: 2, cornerHeight: 2, transform: nil))
+                context.fillPath()
+                context.restoreGState()
+            }
+            badgeIcon.draw(in: corner)
+            return true
+        }
+        image.isTemplate = true
         return image
     }
 

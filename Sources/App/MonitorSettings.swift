@@ -231,9 +231,9 @@ struct MonitorSettingsView: View {
                     get: { model.state.leftClickAction },
                     set: { model.apply(.leftClickAction($0)) }
                 )) {
-                    Text(localization.text("Open menu")).tag(LeftClickAction.showMenu)
-                    Text(localization.text("Switch to Mac")).tag(LeftClickAction.selectMac)
-                    Text(localization.text("Toggle between two inputs")).tag(LeftClickAction.toggleInputs)
+                    Text(localization.title(for: .showMenu)).tag(LeftClickAction.showMenu)
+                    Text(localization.title(for: .selectMac)).tag(LeftClickAction.selectMac)
+                    Text(localization.title(for: .toggleInputs)).tag(LeftClickAction.toggleInputs)
                 }
                 .pickerStyle(.menu)
                 .disabled(model.state.isSwitching)
